@@ -25,6 +25,7 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(ClassDeclaration classDeclaration) {
+        System.out.println("New class!\n");
         //TODO: implement appropriate visit functionality
     }
 

@@ -95,3 +95,4 @@ gen/**
 compilerFall97.iml
 src/main/Smoola*
 *.sml
+out/

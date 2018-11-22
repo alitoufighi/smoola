@@ -56,6 +56,8 @@ public class MethodDeclaration extends Declaration {
         return body;
     }
 
+    public void setBody(ArrayList<Statement> body) { this.body = body; }
+
     public void addStatement(Statement statement) {
         this.body.add(statement);
     }

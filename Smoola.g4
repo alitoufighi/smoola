@@ -241,7 +241,7 @@ grammar Smoola;
 
     expressionOrTemp returns [BinaryOperator operatorType, Expression exp]:
         { $operatorType = BinaryOperator.or; }
-		'||' expand = expressionAnd tmp = expressionOrTemp
+		'||' (expand = expressionAnd) (tmp = expressionOrTemp)
 		{
 		    if($tmp == null){
 
@@ -252,15 +252,23 @@ grammar Smoola;
 	;
 
     expressionAnd returns [Expression exp]:
-		(left = expressionEq) (right = expressionAndTemp)
+		(left = expressionEq) (right = expressionAndTemp[$left.exp])
 		{
-		    $exp = new BinaryExpression($left.exp, $right.exp, $right.operatorType);
+		    $exp = $right.exp;
 		}
 	;
 
-    expressionAndTemp:
-		'&&' expressionEq expressionAndTemp
-	    |
+    expressionAndTemp[Expression lvalue] returns [Expression exp]:
+		'&&'
+		rvalue = expressionEq
+		{
+		    BinaryExpression tmp = BinaryExpression($lvalue.exp, $rvalue.exp, BinaryOperator.and);
+		}
+		rv = expressionAndTemp[tmp]
+		{
+		    $exp = $rv.exp;
+		}
+	    |   { $exp = $lvalue; }
 	;
 
     expressionEq returns [Expression exp]:
@@ -279,8 +287,8 @@ grammar Smoola;
 		expressionAdd expressionCmpTemp
 	;
 
-    expressionCmpTemp:
-		('<' | '>') expressionAdd expressionCmpTemp
+    expressionCmpTemp returns [BinaryOperator operatorType, Expression exp]:
+		('<' {$operatorType = BinaryOperator.lt } | '>' {$oepratorType = Bianryoperator.gt}) expressionAdd expressionCmpTemp
 	    |
 	;
 
@@ -297,7 +305,7 @@ grammar Smoola;
 		expressionUnary expressionMultTemp
 	;
 
-    expressionMultTemp returns [Expression exp]:
+    expressionMultTemp returns [BianryOperator operatorType, Expression exp]:
 		('*' | '/') expressionUnary expressionMultTemp
 	    |
 	;

@@ -149,9 +149,9 @@ grammar Smoola;
 
     statements returns [ArrayList<Statement> stmts]:
         {
-            $stmts = new ArrayList<Statement>;
+            $stmts = new ArrayList<Statement>();
         }
-        ( stm = statement { $stmts.add($stm.stm) })*
+        ( stm = statement { $stmts.add($stm.stm); })*
     ;
 
     statement returns [Statement stm]:
@@ -176,9 +176,9 @@ grammar Smoola;
         }
         |
         assign = statementAssignment
-        {
-            $stm = $assign.assign;
-        }
+//        {
+//            $stm = $assign.assign;
+//        }
     ;
 
     statementBlock returns [Block blk]:
@@ -218,9 +218,9 @@ grammar Smoola;
 
     expression returns [Expression exp]:
 		expressionAssignment
-		{
-		    $exp = new Expression(); // !!!!!!!!!!!!
-		}
+//		{
+//		    $exp = new Expression(); // !!!!!!!!!!!!
+//		}
 	;
 
     expressionAssignment:
@@ -341,7 +341,7 @@ grammar Smoola;
 	    |
 	    ID
 	    {
-	        $t = UserDefinedType();
+	        $t = new UserDefinedType();
 	    }
 	;
 

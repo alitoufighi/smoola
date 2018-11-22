@@ -151,7 +151,7 @@ grammar Smoola;
         {
             $stmts = new ArrayList<Statement>;
         }
-        ( stm = statement { $stmts.add($stm.stm) })*
+        ( stm = statement { $stmts.add($stm.stm); })*
     ;
 
     statement returns [Statement stm]:
@@ -213,7 +213,10 @@ grammar Smoola;
     ;
 
     statementAssignment:
-        expression ';'
+        exp = expression ';'
+        {
+
+        }
     ;
 
     expression returns [Expression exp]:
@@ -223,12 +226,19 @@ grammar Smoola;
 		}
 	;
 
-    expressionAssignment:
-		expressionOr '=' expressionAssignment
-	    |	expressionOr
+    expressionAssignment returns [Expression exp]:
+		lvalue = expressionOr '=' rvalue = expressionAssignment
+		{
+            $exp = new Assign($lvalue.exp, $rvalue.exp);
+		}
+	    |
+	    or = expressionOr
+	    {
+	        $exp = $or.exp;
+	    }
 	;
 
-    expressionOr:
+    expressionOr returns [Expression exp]:
 		expressionAnd expressionOrTemp
 	;
 
@@ -273,7 +283,7 @@ grammar Smoola;
 	    |
 	;
 
-        expressionMult:
+    expressionMult:
 		expressionUnary expressionMultTemp
 	;
 

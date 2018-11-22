@@ -148,35 +148,68 @@ grammar Smoola;
     ;
 
     statements returns [ArrayList<Statement> stmts]:
+        {
+            $stmts = new ArrayList<Statement>;
+        }
         ( stm = statement { $stmts.add($stm.stm) })*
     ;
 
-    statement:
-        statementBlock
+    statement returns [Statement stm]:
+        blk = statementBlock
+        {
+            $stm = $blk.blk;
+        }
         |
-        statementCondition
+        cond = statementCondition
+        {
+            $stm = $cond.cond;
+        }
         |
-        statementLoop
+        loop = statementLoop
+        {
+            $stm = $loop.loop;
+        }
         |
-        statementWrite
+        write = statementWrite
+        {
+            $stm = $write.write;
+        }
         |
-        statementAssignment
+        assign = statementAssignment
+        {
+            $stm = $assign.assign;
+        }
     ;
 
-    statementBlock:
-        '{'  statements '}'
+    statementBlock returns [Block blk]:
+        '{'  stmts = statements '}'
+        {
+            $blk = new Block($stmts.stmts);
+        }
     ;
 
-    statementCondition:
-        'if' '('expression')' 'then' statement ('else' statement)?
+    statementCondition returns [Conditional cond]:
+        { boolean has_alt = false; }
+        'if' '(' exp = expression')' 'then' stmc = statement ('else' stma = statement { has_alt = true; })?
+        {
+            $cond = new Conditional($exp.exp, $stmc.stm);
+            if(has_alt)
+                $cond.setAlternativeBody($stma.stm);
+        }
     ;
 
-    statementLoop:
-        'while' '(' expression ')' statement
+    statementLoop returns [While loop]:
+        'while' '(' exp = expression ')' stm = statement
+        {
+            $loop = new While($exp.exp, $stm.stm);
+        }
     ;
 
-    statementWrite:
-        'writeln(' expression ')' ';'
+    statementWrite returns [Write write]:
+        'writeln(' arg = expression ')' ';'
+        {
+            $write = new Write($arg.exp);
+        }
     ;
 
     statementAssignment:
@@ -319,7 +352,7 @@ grammar Smoola;
     CONST_STR:
 		'"' ~('\r' | '\n' | '"')* '"'
 	;
-	
+
     NL:
 		'\r'? '\n' -> skip
 	;

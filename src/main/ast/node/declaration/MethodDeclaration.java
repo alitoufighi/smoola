@@ -74,7 +74,7 @@ public class MethodDeclaration extends Declaration {
     public String toString() {
         return "MethodDeclaration";
     }
-
+    @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }

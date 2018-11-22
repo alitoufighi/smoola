@@ -149,7 +149,7 @@ grammar Smoola;
 
     statements returns [ArrayList<Statement> stmts]:
         {
-            $stmts = new ArrayList<Statement>;
+            $stmts = new ArrayList<Statement>();
         }
         ( stm = statement { $stmts.add($stm.stm); })*
     ;
@@ -176,9 +176,6 @@ grammar Smoola;
         }
         |
         assign = statementAssignment
-//        {
-//            $stm = $assign.assign;
-//        }
     ;
 
     statementBlock returns [Block blk]:
@@ -221,9 +218,6 @@ grammar Smoola;
 
     expression returns [Expression exp]:
 		expressionAssignment
-//		{
-//		    $exp = new Expression(); // !!!!!!!!!!!!
-//		}
 	;
 
     expressionAssignment returns [Expression exp]:
@@ -313,37 +307,47 @@ grammar Smoola;
 	    |	expressionMem
 	;
 
-    expressionMem:
-		expressionMethods expressionMemTemp
+    expressionMem returns [Expression exp]:
+		(instance = expressionMethods) (result = expressionMemTemp[$instance.exp])
+		{ $exp = $result.exp; }
 	;
 
-    expressionMemTemp:
-		'[' expression ']'
-	    |
+    expressionMemTemp[Expression instance] returns [Expression exp]:
+		'[' index = expression ']'
+		{
+		    $exp = new ArrayCall($instance, $index.exp);
+		}
+	    | { $exp = $instance; }
 	;
 
 	expressionMethods returns [Expression exp]:
-	    (instane = expressionOther) (call = expressionMethodsTemp[$instance])
+	    (instance = expressionOther) (call = expressionMethodsTemp[$instance])
 	    {
-
+            $exp = $call.exp;
 	    }
 	;
 
 	expressionMethodsTemp[Expression instance] returns [Expression exp]:
-	    '.'
+	    {
+	        Expression e;
+	    }
+	     '.'
 	        (
 	            name = ID '(' ')'
 	                {
-	                    $exp = new MethodCall($instance, new Identifier($name.getText()));
+	                    e = new MethodCall($instance, new Identifier($name.getText()));
 	                }
-	            | name = ID '(' (expression (',' expression)* ) ')'
-	              {
-	                $exp = new MethodCall($instance, new Identifier($name.getText()));
-	              }
-	            | 'length' { $exp = new Length($instance); } // argument????
+	            | name = ID { e = new MethodCall($instance, new Identifier($name.getText())); }
+	                    '(' (exp1 = expression { e.addArg($exp1.exp); }
+	                    (',' exp2 = expression { e.addArg($exp2.exp); })* ) ')'
+	            | 'length' { e = new Length($instance); }
 	        )
-	    expressionMethodsTemp[$exp]
-	    |
+	    tmp = expressionMethodsTemp[e]
+        {
+            $exp = $tmp.exp;
+        }
+
+	    |   { $exp = $instance; }
 	;
 
     expressionOther returns [Expression exp]:
@@ -384,7 +388,7 @@ grammar Smoola;
 	    |
 	    ID
 	    {
-	        $t = UserDefinedType();
+	        $t = new UserDefinedType();
 	    }
 	;
 

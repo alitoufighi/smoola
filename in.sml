@@ -1,5 +1,5 @@
 class Main {
-    def main() : int {
-        return 10;
-    }
+#    def main() : int {
+#        return 10;
+#    }
 }

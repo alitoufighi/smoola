@@ -94,5 +94,5 @@ fabric.properties
 gen/**
 compilerFall97.iml
 src/main/Smoola*
-*.sml
+in.sml
 out/

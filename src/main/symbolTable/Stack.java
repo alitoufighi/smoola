@@ -19,9 +19,9 @@ class Stack<E> {
   public E pop() {
     if (top == -1)
       return null;
+    E e = elements.get(top);
+    elements.remove(top);
     --top;
-    E e = elements.get(top + 1);
-    elements.remove(top + 1);
     return e;
   }
 }

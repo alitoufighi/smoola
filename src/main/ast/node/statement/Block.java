@@ -7,6 +7,8 @@ import java.util.ArrayList;
 public class Block extends Statement {
     private ArrayList<Statement> body = new ArrayList<>();
 
+    public Block(ArrayList<Statement> body) { this.body = body; }
+
     public ArrayList<Statement> getBody() {
         return body;
     }

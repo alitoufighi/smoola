@@ -18,18 +18,18 @@ grammar Smoola;
 }
 
     program:
-    {
-        ArrayList<ClassDeclaration> classes = new ArrayList<>();
-        VisitorImpl visitor = new VisitorImpl();
-    }
+        {
+            ArrayList<ClassDeclaration> classes = new ArrayList<>();
+            VisitorImpl visitor = new VisitorImpl();
+        }
         y = mainClass
-        {
-           classes.add($x.c);
-        }
+            {
+               classes.add($x.c);
+            }
         ( x = classDeclaration
-        {
-            classes.add($x.c);
-        }
+            {
+                classes.add($x.c);
+            }
         )* EOF
 
     {
@@ -43,15 +43,17 @@ grammar Smoola;
         }
     }
     ;
+
     mainClass returns [ClassDeclaration c]:
         // name should be checked later
         'class' class_name = ID '{' 'def' method_name = ID '(' ')' ':' 'int' '{' st = statements 'return' rv = expression ';' '}' '}'
         {
             String classname = $class_name.getText();
-            String parentname = null; // wtf?
+            String parentname = null;
             $c = new ClassDeclaration(new Identifier(classname), new Identifier(parentname));
         }
     ;
+
     classDeclaration returns [ClassDeclaration c]:
         {
             boolean has_parent = false;
@@ -81,7 +83,6 @@ grammar Smoola;
 
     methodDeclaration returns [MethodDeclaration m]:
     {
-
 //        private Expression returnValue;
 //        private Type returnType;
 //        private Identifier name;
@@ -92,7 +93,7 @@ grammar Smoola;
 
         'def' name = ID
         {
-            Identifier name = new Identifier($name.getText()));
+            Identifier name = new Identifier($name.getText());
             $m = new MethodDeclaration(name);
         }
         (
@@ -102,12 +103,12 @@ grammar Smoola;
                 '('
                 id = ID
                 {
-                    Identifier var_id = new Identifier($id.getText());
+                    Identifier var0_id = new Identifier($id.getText());
                 }
                 ':'
                 t = type
                 {
-                    $m.addArg(new VarDeclaration(var_id, $t.t));
+                    $m.addArg(new VarDeclaration(var0_id, $t.t));
                 }
                 (
                     ','
@@ -136,35 +137,48 @@ grammar Smoola;
                 $m.addLocalVar($var.var);
             }
         )*
-        statements
+        stmts = statements
+        {
+            $m.setBody($stmts.stmts);
+        }
         'return'
         rv = expression { $m.setReturnValue($rv.exp); }
         ';'
         '}'
     ;
 
-    statements:
-        (statement)*
+    statements returns [ArrayList<Statement> stmts]:
+        ( stm = statement { $stmts.add($stm.stm) })*
     ;
+
     statement:
-        statementBlock |
-        statementCondition |
-        statementLoop |
-        statementWrite |
+        statementBlock
+        |
+        statementCondition
+        |
+        statementLoop
+        |
+        statementWrite
+        |
         statementAssignment
     ;
+
     statementBlock:
         '{'  statements '}'
     ;
+
     statementCondition:
         'if' '('expression')' 'then' statement ('else' statement)?
     ;
+
     statementLoop:
         'while' '(' expression ')' statement
     ;
+
     statementWrite:
         'writeln(' expression ')' ';'
     ;
+
     statementAssignment:
         expression ';'
     ;
@@ -248,13 +262,16 @@ grammar Smoola;
 		'[' expression ']'
 	    |
 	;
+
 	expressionMethods:
 	    expressionOther expressionMethodsTemp
 	;
+
 	expressionMethodsTemp:
 	    '.' (ID '(' ')' | ID '(' (expression (',' expression)*) ')' | 'length') expressionMethodsTemp
 	    |
 	;
+
     expressionOther:
 		CONST_NUM
         |	CONST_STR
@@ -267,6 +284,7 @@ grammar Smoola;
         |   ID '[' expression ']'
         |	'(' expression ')'
 	;
+
 	type returns [Type t]:
 	    'int'
 	    {
@@ -301,6 +319,7 @@ grammar Smoola;
     CONST_STR:
 		'"' ~('\r' | '\n' | '"')* '"'
 	;
+	
     NL:
 		'\r'? '\n' -> skip
 	;

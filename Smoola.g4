@@ -17,11 +17,13 @@ grammar Smoola;
     import ast.VisitorImpl;
     import ast.node.expression.Value.*;
     import ast.node.Program;
+    import symbolTable.SymbolTable;
 }
 
     program:
         {
             Program program = new Program();
+            SymbolTable.push(new SymbolTable());
         }
         y = mainClass
         {
@@ -32,6 +34,10 @@ grammar Smoola;
             program.addClass($x.c);
         }
         )* EOF
+        {
+            VisitorImpl visitor = new VisitorImpl();
+            program.accept(visitor);
+        }
     ;
 
     mainClass returns [ClassDeclaration c]:
@@ -40,12 +46,18 @@ grammar Smoola;
         {
             String classname = $class_name.getText();
             String parentname = "";
-            $c = new ClassDeclaration(new Identifier(classname), new Identifier(parentname));
-            MethodDeclaration mainMethod = new MethodDeclaration(new Identifier($method_name.getText()));
+
+            $c = new ClassDeclaration(new Identifier(classname, $class_name.getLine()), new Identifier(parentname,
+                    $class_name.getLine()));
+            $c.setLineNum($class_name.getLine());
+
+            MethodDeclaration mainMethod = new MethodDeclaration(new Identifier($method_name.getText(),
+                    $method_name.getLine()));
 
             mainMethod.setReturnValue($rv.exp);
             mainMethod.setReturnType(new IntType());
             mainMethod.setBody($st.stmts);
+            mainMethod.setLineNum($method_name.getLine());
             $c.addMethodDeclaration(mainMethod);
         }
     ;
@@ -61,7 +73,9 @@ grammar Smoola;
         {
             String classname = $name.getText();
             String parentname = (has_parent) ? $pname.getText() : ""; // wtf?
-            $c = new ClassDeclaration(new Identifier(classname), new Identifier(parentname));
+            $c = new ClassDeclaration(new Identifier(classname, $pname.getLine()),
+                                        new Identifier(parentname, $pname.getLine()));
+            $c.setLineNum($name.getLine());
         }
         '{'
         (var = varDeclaration { $c.addVarDeclaration($var.var); })*
@@ -72,16 +86,18 @@ grammar Smoola;
     varDeclaration returns [VarDeclaration var]:
         'var' (id = ID)':' (t = type) ';'
         {
-            Identifier var_id = new Identifier($id.getText());
+            Identifier var_id = new Identifier($id.getText(), $id.getLine());
             $var = new VarDeclaration(var_id, $t.t);
+            $var.setLineNum($id.getLine());
         }
     ;
 
     methodDeclaration returns [MethodDeclaration m]:
         'def' name = ID
         {
-            Identifier name = new Identifier($name.getText());
+            Identifier name = new Identifier($name.getText(), $name.getLine());
             $m = new MethodDeclaration(name);
+            $m.setLineNum($name.getLine());
         }
         (
             '(' ')'
@@ -90,7 +106,7 @@ grammar Smoola;
                 '('
                 id = ID
                 {
-                    Identifier var0_id = new Identifier($id.getText());
+                    Identifier var0_id = new Identifier($id.getText(), $id.getLine());
                 }
                 ':'
                 t = type
@@ -101,7 +117,7 @@ grammar Smoola;
                     ','
                     id = ID
                     {
-                        Identifier var_id = new Identifier($id.getText());
+                        Identifier var_id = new Identifier($id.getText(), $id.getLine());
                     }
                     ':'
                     t = type
@@ -205,6 +221,9 @@ grammar Smoola;
             if ($exp.exp instanceof BinaryExpression) {
                 if (((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.assign)
                     $assign = new Assign(((BinaryExpression)$exp.exp).getLeft(), ((BinaryExpression)$exp.exp).getRight());
+            }
+            else{
+                print("Error");
             }
         }
     ;
@@ -411,9 +430,9 @@ grammar Smoola;
 
 	            name = ID '(' ')'
 	                {
-	                    MethodCall e = new MethodCall(instance, new Identifier($name.getText()));
+	                    MethodCall e = new MethodCall(instance, new Identifier($name.getText(), $name.getLine()));
 	                }
-	            | name = ID { MethodCall e = new MethodCall(instance, new Identifier($name.getText())); }
+	            | name = ID { MethodCall e = new MethodCall(instance, new Identifier($name.getText(), $name.getLine())); }
 	                    '(' (exp1 = expression { ((MethodCall)e).addArg($exp1.exp); })
 	                    (',' exp2 = expression { ((MethodCall)e).addArg($exp2.exp); })* ')'
 	            | 'length' { Length e = new Length(instance); }
@@ -434,13 +453,13 @@ grammar Smoola;
                 $exp = new NewArray();
                 ((NewArray)$exp).setExpression(new IntValue(Integer.parseInt($size.getText()), new IntType()));
             }
-        |   'new ' name = ID '(' ')' { $exp = new NewClass(new Identifier($name.getText())); } // set classdeclaration in symbol table
+        |   'new ' name = ID '(' ')' { $exp = new NewClass(new Identifier($name.getText(), $name.getLine())); } // set classdeclaration in symbol table
         |   'this' { $exp = new This(); }
         |   'true' { $exp = new BooleanValue(true, new BooleanType()); }
         |   'false' { $exp = new BooleanValue(false, new BooleanType()); }
-        |	name = ID { $exp = new Identifier($name.getText()); }
+        |	name = ID { $exp = new Identifier($name.getText(), $name.getLine()); }
         |   name = ID '[' index = expression ']'
-            { $exp = new ArrayCall(new Identifier($name.getText()), $index.exp); }
+            { $exp = new ArrayCall(new Identifier($name.getText(), $name.getLine()), $index.exp); }
         |	'(' expression ')'
 	;
 

@@ -5,8 +5,9 @@ import ast.Visitor;
 public class Identifier extends Expression {
     private String name;
 
-    public Identifier(String name) {
+    public Identifier(String name, int lineNum) {
         this.name = name;
+        this.lineNum = lineNum;
     }
 
     public String getName() {

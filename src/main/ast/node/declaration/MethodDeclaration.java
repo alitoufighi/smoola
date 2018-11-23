@@ -16,9 +16,7 @@ public class MethodDeclaration extends Declaration {
     private ArrayList<VarDeclaration> localVars = new ArrayList<>();
     private ArrayList<Statement> body = new ArrayList<>();
 
-    public MethodDeclaration(Identifier name) {
-        this.name = name;
-    }
+    public MethodDeclaration(Identifier name) { this.name = name; }
 
     public Expression getReturnValue() {
         return returnValue;

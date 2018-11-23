@@ -1,11 +1,11 @@
 class Main {
     def main() : int {
-        x.y();
-        return 10;
+        return x;
     }
 }
 
-class Temp extends X{
-    var x : int;
-    var y : int[];
+class a {
+    def b(c : int, e : d) : int {
+        return c - e.k()[5];
+    }
 }

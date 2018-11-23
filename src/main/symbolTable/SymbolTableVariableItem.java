@@ -2,15 +2,15 @@ package symbolTable;
 
 import ast.Type.Type;
 
-public abstract class SymbolTableVariableItemBase extends SymbolTableItem {
-
+public class SymbolTableVariableItem extends SymbolTableItem {
+    static private int index_counter = 0;
     private int index;
     protected Type type;
 
-    public SymbolTableVariableItemBase(String name, Type type, int index) {
+    public SymbolTableVariableItem(String name, Type type) {
         this.name = name;
         this.type = type;
-        this.index = index;
+        this.index = index_counter++;
     }
 
     public String getName() {
@@ -23,7 +23,7 @@ public abstract class SymbolTableVariableItemBase extends SymbolTableItem {
 
     @Override
     public String getKey() {
-        return name;
+        return name.concat("@").concat("var");
     }
 
     public int getIndex() {

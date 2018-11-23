@@ -9,112 +9,200 @@ import ast.node.expression.Value.BooleanValue;
 import ast.node.expression.Value.IntValue;
 import ast.node.expression.Value.StringValue;
 import ast.node.statement.*;
+import ast.Type.Type;
+import symbolTable.*;
+
+import java.util.ArrayList;
 
 public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(Program program) {
-        //TODO: implement appropriate visit functionality
-    }
+//    	try {
+//			SymbolTable.push(new SymbolTable());
+//		}
+//		catch(ItemAlreadyExistsException) {
+//
+//		}
+		program.getMainClass().accept(this);
+
+		for (ClassDeclaration classDeclaration : program.getClasses())
+			classDeclaration.accept(this);
+
+		System.out.println("program visited!");
+	}
 
     @Override
     public void visit(ClassDeclaration classDeclaration) {
-        System.out.println("New class!\n");
-        //TODO: implement appropriate visit functionality
+    	String name = classDeclaration.getName().getName();
+    	try{
+			System.out.println(classDeclaration.toString());
+			SymbolTable.top.put(new SymbolTableClassItem(name));
+			classDeclaration.getName().accept(this);
+			classDeclaration.getParentName().accept(this);
+			for(VarDeclaration vdec : classDeclaration.getVarDeclarations())
+				vdec.accept(this);
+			for(MethodDeclaration mdec : classDeclaration.getMethodDeclarations())
+				mdec.accept(this);
+		}
+		catch(ItemAlreadyExistsException e){
+//			SymbolTable.top.put(new SymbolTableClassItem(name.concat("-temp"))); // ?!?
+			System.out.println(
+					new StringBuilder("line:").append(classDeclaration.getLineNum())
+							.append(":Redefinition of class ").append(name)
+			);
+		}
     }
 
     @Override
     public void visit(MethodDeclaration methodDeclaration) {
-        //TODO: implement appropriate visit functionality
+    	String name = methodDeclaration.getName().getName();
+		ArrayList<Type> argsType = new ArrayList<>();
+    	for(VarDeclaration var : methodDeclaration.getArgs())
+    		argsType.add(var.getType());
+
+    	try{
+			System.out.println(methodDeclaration.toString());
+			SymbolTable.top.put(new SymbolTableMethodItem(name, argsType));
+			for(VarDeclaration arg : methodDeclaration.getArgs())
+				arg.accept(this);
+			for(VarDeclaration localVar : methodDeclaration.getLocalVars())
+				localVar.accept(this);
+    		methodDeclaration.getName().accept(this);
+			for(Statement stm : methodDeclaration.getBody()){
+				stm.accept(this);
+			}
+			methodDeclaration.getReturnValue().accept(this);
+    	}
+		catch (ItemAlreadyExistsException e){
+    		System.out.println(
+    				new StringBuilder("line: ").append(methodDeclaration.getLineNum())
+							.append(":Redefinition of method ").append(name)
+			);
+		}
     }
 
     @Override
     public void visit(VarDeclaration varDeclaration) {
-        //TODO: implement appropriate visit functionality
+		String name = varDeclaration.getIdentifier().getName();
+		Type type = varDeclaration.getType();
+		try{
+			System.out.println(varDeclaration.toString());
+			SymbolTable.top.put(new SymbolTableVariableItem(name, type));
+			varDeclaration.getIdentifier().accept(this);
+		}
+		catch (ItemAlreadyExistsException e){
+			System.out.println(
+					new StringBuilder("line: ").append(varDeclaration.getLineNum())
+							.append(":Redefinition of variable ").append(name)
+			);
+		}
     }
 
     @Override
     public void visit(ArrayCall arrayCall) {
-        //TODO: implement appropriate visit functionality
+    	System.out.println(arrayCall.toString());
+		arrayCall.getIndex().accept(this);
+		arrayCall.getInstance().accept(this);
     }
 
     @Override
     public void visit(BinaryExpression binaryExpression) {
-        //TODO: implement appropriate visit functionality
+    	System.out.println(binaryExpression.toString());
+    	binaryExpression.getLeft().accept(this);
+    	binaryExpression.getRight().accept(this);
     }
 
     @Override
     public void visit(Identifier identifier) {
-        //TODO: implement appropriate visit functionality
+    	System.out.println(identifier.toString());
     }
 
     @Override
     public void visit(Length length) {
-        //TODO: implement appropriate visit functionality
+    	System.out.println(length.toString());
+    	length.getExpression().accept(this);
     }
 
     @Override
     public void visit(MethodCall methodCall) {
-        //TODO: implement appropriate visit functionality
+    	System.out.println(methodCall.toString());
+		methodCall.getMethodName().accept(this);
+		methodCall.getInstance().accept(this);
+		for(Expression arg : methodCall.getArgs())
+			arg.accept(this);
     }
 
     @Override
     public void visit(NewArray newArray) {
-        //TODO: implement appropriate visit functionality
+    	System.out.println(newArray.toString());
+    	newArray.getExpression().accept(this);
     }
 
     @Override
     public void visit(NewClass newClass) {
-        //TODO: implement appropriate visit functionality
+		System.out.println(newClass.toString());
+		newClass.getClassName().accept(this);
     }
 
     @Override
     public void visit(This instance) {
-        //TODO: implement appropriate visit functionality
+		System.out.println(instance.toString());
     }
 
     @Override
     public void visit(UnaryExpression unaryExpression) {
-        //TODO: implement appropriate visit functionality
+    	System.out.println(unaryExpression.toString());
+    	unaryExpression.getValue().accept(this);
     }
 
     @Override
     public void visit(BooleanValue value) {
-        //TODO: implement appropriate visit functionality
+		System.out.println(value.toString());
     }
 
     @Override
     public void visit(IntValue value) {
-        //TODO: implement appropriate visit functionality
+		System.out.println(value.toString());
     }
 
     @Override
     public void visit(StringValue value) {
-        //TODO: implement appropriate visit functionality
+		System.out.println(value.toString());
     }
 
     @Override
     public void visit(Assign assign) {
-        //TODO: implement appropriate visit functionality
+		System.out.println(assign.toString());
+		assign.getlValue().accept(this);
+		assign.getrValue().accept(this);
     }
 
     @Override
     public void visit(Block block) {
-        //TODO: implement appropriate visit functionality
+		System.out.println(block.toString());
+		for(Statement stm : block.getBody())
+			stm.accept(this);
     }
 
     @Override
     public void visit(Conditional conditional) {
-        //TODO: implement appropriate visit functionality
+		System.out.println(conditional.toString());
+		conditional.getExpression().accept(this);
+		conditional.getAlternativeBody().accept(this);
+		conditional.getConsequenceBody().accept(this);
     }
 
     @Override
     public void visit(While loop) {
-        //TODO: implement appropriate visit functionality
+		System.out.println(loop.toString());
+		loop.getCondition().accept(this);
+		loop.getBody().accept(this);
     }
 
     @Override
     public void visit(Write write) {
-        //TODO: implement appropriate visit functionality
+		System.out.println(write.toString());
+		write.getArg().accept(this);
     }
 }

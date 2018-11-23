@@ -82,15 +82,6 @@ grammar Smoola;
     ;
 
     methodDeclaration returns [MethodDeclaration m]:
-    {
-//        private Expression returnValue;
-//        private Type returnType;
-//        private Identifier name;
-//        private ArrayList<VarDeclaration> args = new ArrayList<>();
-//        private ArrayList<VarDeclaration> localVars = new ArrayList<>();
-//        private ArrayList<Statement> body = new ArrayList<>();
-    }
-
         'def' name = ID
         {
             Identifier name = new Identifier($name.getText());
@@ -330,14 +321,14 @@ grammar Smoola;
     expressionAddTemp[Expression lvalue] returns [Expression exp]:
 		(
 		    '+'
-//		        { BinaryOperator operatorType = BinaryOperator.add }
+		        { BinaryOperator operatorType = BinaryOperator.add }
 		    | '-'
-//		        { BinaryOperator operatorType = BinaryOperator.sub; }
+		        { BinaryOperator operatorType = BinaryOperator.sub; }
 		)
 		rvalue = expressionMult
-//		{
-//		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.tmp, operatorType);
-//		}
+		{
+		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, operatorType);
+		}
 		rv = expressionAddTemp[tmp]
 		{
 		    $exp = $rv.exp;
@@ -369,8 +360,17 @@ grammar Smoola;
 	;
 
     expressionUnary returns [Expression exp]:
-		('!' | '-') expressionUnary
-	    |	expressionMem
+        {
+            UnaryOperator unaryOperator;
+        }
+		('!' { unaryOperator = UnaryOperator.not; } | '-' { unaryOperator = UnaryOperator.not; }) value = expressionUnary
+		{
+		    $exp = UnaryExpression(unaryOperator, $value.exp);
+		}
+	    |	expMem = expressionMem
+	    {
+	        $exp = $expMem.exp;
+	    }
 	;
 
     expressionMem returns [Expression exp]:

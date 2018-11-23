@@ -1,10 +1,10 @@
 grammar Smoola;
 
-//@members{
-//   void print(Object obj){
-//        System.out.println(obj);
-//   }
-//}
+@members{
+   void print(Object obj){
+        System.out.println(obj);
+   }
+}
 
 @parser::header {
     import ast.node.declaration.*;
@@ -15,33 +15,23 @@ grammar Smoola;
     import ast.Type.UserDefinedType.*;
     import ast.Type.*;
     import ast.VisitorImpl;
+    import ast.node.expression.Value.*;
+    import ast.node.Program;
 }
 
     program:
         {
-            ArrayList<ClassDeclaration> classes = new ArrayList<>();
-            VisitorImpl visitor = new VisitorImpl();
+            Program program = new Program();
         }
         y = mainClass
         {
-           classes.add($x.c);
+           program.setMainClass($y.c);
         }
         ( x = classDeclaration
-            {
-                classes.add($x.c);
-            }
-        )* EOF
-
         {
-            print("SALAM");
-
-            for(int i = 0; i < classes.size(); ++i){
-                ClassDeclaration item = classes.get(i);
-                String class_name = item.getName().getName();
-                String parent_name = item.getParentName().getName();
-
-            }
+            program.addClass($x.c);
         }
+        )* EOF
     ;
 
     mainClass returns [ClassDeclaration c]:
@@ -49,8 +39,14 @@ grammar Smoola;
         'class' class_name = ID '{' 'def' method_name = ID '(' ')' ':' 'int' '{' st = statements 'return' rv = expression ';' '}' '}'
         {
             String classname = $class_name.getText();
-            String parentname = null;
+            String parentname = "";
             $c = new ClassDeclaration(new Identifier(classname), new Identifier(parentname));
+            MethodDeclaration mainMethod = new MethodDeclaration(new Identifier($method_name.getText()));
+
+            mainMethod.setReturnValue($rv.exp);
+            mainMethod.setReturnType(new IntType());
+            mainMethod.setBody($st.stmts);
+            $c.addMethodDeclaration(mainMethod);
         }
     ;
 
@@ -64,7 +60,7 @@ grammar Smoola;
         ('extends' pname = ID { has_parent = true; })?
         {
             String classname = $name.getText();
-            String parentname = (has_parent) ? $pname.getText() : null; // wtf?
+            String parentname = (has_parent) ? $pname.getText() : ""; // wtf?
             $c = new ClassDeclaration(new Identifier(classname), new Identifier(parentname));
         }
         '{'
@@ -203,11 +199,13 @@ grammar Smoola;
         }
     ;
 
-    statementAssignment returns [Assign assign]:
+    statementAssignment returns [Statement assign]:
         exp = expression ';'
         {
-            BinaryExpression xp = $exp.exp;
-            $assign = new Assign(xp.getLeft(), xp.getRight());
+            if ($exp.exp instanceof BinaryExpression) {
+                if (((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.assign)
+                    $assign = new Assign(((BinaryExpression)$exp.exp).getLeft(), ((BinaryExpression)$exp.exp).getRight());
+            }
         }
     ;
 
@@ -241,13 +239,13 @@ grammar Smoola;
 		'||'
 		rvalue = expressionAnd
 		{
-		    BinaryExpression tmp = new BinaryExpression($lvalue.exp, $rvalue.exp, BinaryOperator.or);
+		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, BinaryOperator.or);
 		}
 		rv = expressionOrTemp[tmp]
 		{
 		    $exp = $rv.exp;
 		}
-	    | { $exp = $lvalue; }
+	    | { $exp = lvalue; }
 
 	;
 
@@ -262,13 +260,13 @@ grammar Smoola;
 		'&&'
 		rvalue = expressionEq
 		{
-		    BinaryExpression tmp = new BinaryExpression($lvalue.exp, $rvalue.exp, BinaryOperator.and);
+		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, BinaryOperator.and);
 		}
 		rv = expressionAndTemp[tmp]
 		{
 		    $exp = $rv.exp;
 		}
-	    |   { $exp = $lvalue; }
+	    |   { $exp = lvalue; }
 	;
 
     expressionEq returns [Expression exp]:
@@ -278,7 +276,10 @@ grammar Smoola;
 		}
 	;
 
-    expressionEqTemp[Expression lvalue] returns  [Experssion exp]:
+    expressionEqTemp[Expression lvalue] returns  [Expression exp]:
+        {
+            BinaryOperator operatorType;
+        }
 		('==' { operatorType = BinaryOperator.eq; } | '<>' { operatorType = BinaryOperator.neq; })
 		rvalue = expressionCmp
 		{
@@ -299,7 +300,10 @@ grammar Smoola;
 	;
 
     expressionCmpTemp[Expression lvalue] returns [Expression exp]:
-		('<' { operatorType = BinaryOperator.lt } | '>' { oepratorType = Bianryoperator.gt})
+        {
+            BinaryOperator operatorType;
+        }
+		('<' { operatorType = BinaryOperator.lt; } | '>' { operatorType = BinaryOperator.gt; })
 		rvalue = expressionAdd
 		{
 		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, operatorType);
@@ -319,11 +323,14 @@ grammar Smoola;
 	;
 
     expressionAddTemp[Expression lvalue] returns [Expression exp]:
+		{
+            BinaryOperator operatorType;
+        }
 		(
 		    '+'
-		        { BinaryOperator operatorType = BinaryOperator.add }
+		        { operatorType = BinaryOperator.add; }
 		    | '-'
-		        { BinaryOperator operatorType = BinaryOperator.sub; }
+		        { operatorType = BinaryOperator.sub; }
 		)
 		rvalue = expressionMult
 		{
@@ -344,9 +351,12 @@ grammar Smoola;
 	    ;
 
     expressionMultTemp[Expression lvalue] returns [Expression exp]:
+        {
+            BinaryOperator operatorType;
+        }
 		(
-		    '*' { BinaryOperator operatorType = BinaryOperator.mult; }
-		    | '/' { BinaryOperator operatorType = BinaryOperator.div; }
+		    '*' { operatorType = BinaryOperator.mult; }
+		    | '/' { operatorType = BinaryOperator.div; }
 		)
 		rvalue = expressionUnary
 		{
@@ -365,7 +375,7 @@ grammar Smoola;
         }
 		('!' { unaryOperator = UnaryOperator.not; } | '-' { unaryOperator = UnaryOperator.not; }) value = expressionUnary
 		{
-		    $exp = UnaryExpression(unaryOperator, $value.exp);
+		    $exp = new UnaryExpression(unaryOperator, $value.exp);
 		}
 	    |	expMem = expressionMem
 	    {
@@ -394,34 +404,37 @@ grammar Smoola;
 	;
 
 	expressionMethodsTemp[Expression instance] returns [Expression exp]:
-	    {
-	        Expression e;
-	    }
 	     '.'
-	        (
+//             {
+//                Expression e;
+//             }
+
 	            name = ID '(' ')'
 	                {
-	                    e = new MethodCall($instance, new Identifier($name.getText()));
+	                    MethodCall e = new MethodCall(instance, new Identifier($name.getText()));
 	                }
-	            | name = ID { e = new MethodCall($instance, new Identifier($name.getText())); }
-	                    '(' (exp1 = expression { e.addArg($exp1.exp); }
-	                    (',' exp2 = expression { e.addArg($exp2.exp); })* ) ')'
-	            | 'length' { e = new Length($instance); }
-	        )
+	            | name = ID { MethodCall e = new MethodCall(instance, new Identifier($name.getText())); }
+	                    '(' (exp1 = expression { ((MethodCall)e).addArg($exp1.exp); })
+	                    (',' exp2 = expression { ((MethodCall)e).addArg($exp2.exp); })* ')'
+	            | 'length' { Length e = new Length(instance); }
+
 	    tmp = expressionMethodsTemp[e]
         {
             $exp = $tmp.exp;
         }
 
-	    |   { $exp = $instance; }
+	    |   { $exp = instance; }
 	;
 
     expressionOther returns [Expression exp]:
-		num = CONST_NUM { $exp = new IntValue(Integer.parseInt($num.getText()); }
-        |	str = CONST_STR { $exp = new StringValue($str.getText(),  new StringType()); }
+		num = CONST_NUM { $exp = new IntValue(Integer.parseInt($num.getText()), new IntType()); }
+        |	str = CONST_STR { $exp = new StringValue($str.getText(), new StringType()); }
         |   'new ' 'int' '[' size = CONST_NUM ']'
-            { $exp = new NewArray(new IntValue(Integer.parseInt($size.text))); }
-        |   'new ' ID '(' ')' { $exp = new UserDefinedType(); } // set classdeclaration in symbol table
+            {
+                $exp = new NewArray();
+                ((NewArray)$exp).setExpression(new IntValue(Integer.parseInt($size.getText()), new IntType()));
+            }
+        |   'new ' name = ID '(' ')' { $exp = new NewClass(new Identifier($name.getText())); } // set classdeclaration in symbol table
         |   'this' { $exp = new This(); }
         |   'true' { $exp = new BooleanValue(true, new BooleanType()); }
         |   'false' { $exp = new BooleanValue(false, new BooleanType()); }

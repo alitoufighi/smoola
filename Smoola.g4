@@ -176,6 +176,9 @@ grammar Smoola;
         }
         |
         assign = statementAssignment
+        {
+            $stm = $assign.assign;
+        }
     ;
 
     statementBlock returns [Block blk]:
@@ -209,22 +212,26 @@ grammar Smoola;
         }
     ;
 
-    statementAssignment:
+    statementAssignment returns [Assign assign]:
         exp = expression ';'
         {
-
+            BinaryExpression xp = $exp.exp;
+            $assign = new Assign(xp.getLeft(), xp.getRight());
         }
     ;
 
     expression returns [Expression exp]:
-		expressionAssignment
+		xp = expressionAssignment
+		{
+		    $exp = $xp.exp;
+		}
 	;
 
     expressionAssignment returns [Expression exp]:
-		lvalue = expressionOr '=' rvalue = expressionAssignment
+		(lvalue = expressionOr) '=' (rvalue = expressionAssignment)
 		{
-            $exp = new Assign($lvalue.exp, $rvalue.exp);
-		}
+            $exp = new BinaryExpression($lvalue.exp, $rvalue.exp, BinaryOperator.assign);
+        }
 	    |
 	    or = expressionOr
 	    {
@@ -240,7 +247,6 @@ grammar Smoola;
 	;
 
     expressionOrTemp[Expression lvalue] returns [Expression exp]:
-        { $operatorType = BinaryOperator.or; }
 		'||'
 		rvalue = expressionAnd
 		{
@@ -341,7 +347,10 @@ grammar Smoola;
 
     expressionMult returns [Expression exp]:
 		(left = expressionUnary) (right = expressionMultTemp[$left.exp])
-	;
+		{
+		    $exp = $right.exp;
+		}
+	    ;
 
     expressionMultTemp[Expression lvalue] returns [Expression exp]:
 		(

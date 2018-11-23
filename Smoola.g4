@@ -1,10 +1,10 @@
 grammar Smoola;
 
-@members{
-   void print(Object obj){
-        System.out.println(obj);
-   }
-}
+//@members{
+//   void print(Object obj){
+//        System.out.println(obj);
+//   }
+//}
 
 @parser::header {
     import ast.node.declaration.*;
@@ -240,7 +240,7 @@ grammar Smoola;
 	;
 
     expressionOrTemp[Expression lvalue] returns [Expression exp]:
-        { $operatorType = BinaryOperator.or; }
+        { OperatorType operatorType = BinaryOperator.or; }
 		'||'
 		rvalue = expressionAnd
 		{
@@ -324,14 +324,14 @@ grammar Smoola;
     expressionAddTemp[Expression lvalue] returns [Expression exp]:
 		(
 		    '+'
-		        { BinaryOperator operatorType = BinaryOperator.add }
+//		        { BinaryOperator operatorType = BinaryOperator.add }
 		    | '-'
-		        { BinaryOperator operatorType = BinaryOperator.sub; }
+//		        { BinaryOperator operatorType = BinaryOperator.sub; }
 		)
 		rvalue = expressionMult
-		{
-		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.tmp, operatorType);
-		}
+//		{
+//		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.tmp, operatorType);
+//		}
 		rv = expressionAddTemp[tmp]
 		{
 		    $exp = $rv.exp;
@@ -359,7 +359,7 @@ grammar Smoola;
 	    | { $exp = lvalue; }
 	;
 
-    expressionUnary:
+    expressionUnary returns [Expression exp]:
 		('!' | '-') expressionUnary
 	    |	expressionMem
 	;
@@ -378,7 +378,7 @@ grammar Smoola;
 	;
 
 	expressionMethods returns [Expression exp]:
-	    (instance = expressionOther) (call = expressionMethodsTemp[$instance])
+	    (instance = expressionOther) (call = expressionMethodsTemp[$instance.exp])
 	    {
             $exp = $call.exp;
 	    }
@@ -411,14 +411,14 @@ grammar Smoola;
 		num = CONST_NUM { $exp = new IntValue(Integer.parseInt($num.getText()); }
         |	str = CONST_STR { $exp = new StringValue($str.getText(),  new StringType()); }
         |   'new ' 'int' '[' size = CONST_NUM ']'
-            { $exp = new NewArray(new IntValue(Integer.parseInt($num.getText()))); }
+            { $exp = new NewArray(new IntValue(Integer.parseInt($size.text))); }
         |   'new ' ID '(' ')' { $exp = new UserDefinedType(); } // set classdeclaration in symbol table
         |   'this' { $exp = new This(); }
         |   'true' { $exp = new BooleanValue(true, new BooleanType()); }
         |   'false' { $exp = new BooleanValue(false, new BooleanType()); }
         |	name = ID { $exp = new Identifier($name.getText()); }
         |   name = ID '[' index = expression ']'
-            { $exp = new ArrayCall(new Identifier($name.getText()), $index.exp()); }
+            { $exp = new ArrayCall(new Identifier($name.getText()), $index.exp); }
         |	'(' expression ')'
 	;
 

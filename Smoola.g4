@@ -233,21 +233,24 @@ grammar Smoola;
 	;
 
     expressionOr returns [Expression exp]:
-		(left = expressionAnd) (right = expressionOrTemp)
+		(left = expressionAnd) (right = expressionOrTemp[$left.exp])
 		{
-		    $exp = new BinaryExpression($left.exp, $right.exp, $right.operatorType);
+		    $exp = $right.exp;
 		}
 	;
 
-    expressionOrTemp returns [BinaryOperator operatorType, Expression exp]:
+    expressionOrTemp[Expression lvalue] returns [Expression exp]:
         { $operatorType = BinaryOperator.or; }
-		'||' (expand = expressionAnd) (tmp = expressionOrTemp)
+		'||'
+		rvalue = expressionAnd
 		{
-		    if($tmp == null){
-
-		    }
+		    BinaryExpression tmp = new BinaryExpression($lvalue.exp, $rvalue.exp, BinaryOperator.or);
 		}
-	    | { $exp = null; }
+		rv = expressionOrTemp[tmp]
+		{
+		    $exp = $rv.exp;
+		}
+	    | { $exp = $lvalue; }
 
 	;
 
@@ -262,7 +265,7 @@ grammar Smoola;
 		'&&'
 		rvalue = expressionEq
 		{
-		    BinaryExpression tmp = BinaryExpression($lvalue.exp, $rvalue.exp, BinaryOperator.and);
+		    BinaryExpression tmp = new BinaryExpression($lvalue.exp, $rvalue.exp, BinaryOperator.and);
 		}
 		rv = expressionAndTemp[tmp]
 		{
@@ -272,42 +275,88 @@ grammar Smoola;
 	;
 
     expressionEq returns [Expression exp]:
-		(left = expressionCmp) (right = expressionEqTemp)
+		(left = expressionCmp) (right = expressionEqTemp[$left.exp])
 		{
-
+            $exp = $right.exp;
 		}
 	;
 
-    expressionEqTemp returns [BinaryOperator operatorType, Experssion exp]:
-		('==' { $operatorType = BinaryOperator.eq; } | '<>' { $operatorType = BinaryOperator.neq; }) expressionCmp expressionEqTemp
-	    | { $exp = null; }
+    expressionEqTemp[Expression lvalue] returns  [Experssion exp]:
+		('==' { operatorType = BinaryOperator.eq; } | '<>' { operatorType = BinaryOperator.neq; })
+		rvalue = expressionCmp
+		{
+		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, operatorType);
+		}
+		rv = expressionEqTemp[tmp]
+		{
+		    $exp = $rv.exp;
+		}
+	    | { $exp = lvalue; }
 	;
 
-    expressionCmp:
-		expressionAdd expressionCmpTemp
+    expressionCmp returns [Expression exp]:
+		(left = expressionAdd) (right = expressionCmpTemp[$left.exp])
+		{
+		    $exp = $right.exp;
+		}
 	;
 
-    expressionCmpTemp returns [BinaryOperator operatorType, Expression exp]:
-		('<' {$operatorType = BinaryOperator.lt } | '>' {$oepratorType = Bianryoperator.gt}) expressionAdd expressionCmpTemp
-	    |
+    expressionCmpTemp[Expression lvalue] returns [Expression exp]:
+		('<' { operatorType = BinaryOperator.lt } | '>' { oepratorType = Bianryoperator.gt})
+		rvalue = expressionAdd
+		{
+		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, operatorType);
+		}
+		rv = expressionCmpTemp[tmp]
+		{
+		    $exp = $rv.exp;
+		}
+	    | { $exp = lvalue; }
 	;
 
-    expressionAdd:
-		expressionMult expressionAddTemp
+    expressionAdd returns [Expression exp]:
+		(left = expressionMult) (right = expressionAddTemp[$left.exp])
+		{
+		    $exp = $right.exp;
+		}
 	;
 
-    expressionAddTemp:
-		('+' | '-') expressionMult expressionAddTemp
-	    |
+    expressionAddTemp[Expression lvalue] returns [Expression exp]:
+		(
+		    '+'
+		        { BinaryOperator operatorType = BinaryOperator.add }
+		    | '-'
+		        { BinaryOperator operatorType = BinaryOperator.sub; }
+		)
+		rvalue = expressionMult
+		{
+		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.tmp, operatorType);
+		}
+		rv = expressionAddTemp[tmp]
+		{
+		    $exp = $rv.exp;
+		}
+	    | { $exp = lvalue; }
 	;
 
-    expressionMult:
-		expressionUnary expressionMultTemp
+    expressionMult returns [Expression exp]:
+		(left = expressionUnary) (right = expressionMultTemp[$left.exp])
 	;
 
-    expressionMultTemp returns [BianryOperator operatorType, Expression exp]:
-		('*' | '/') expressionUnary expressionMultTemp
-	    |
+    expressionMultTemp[Expression lvalue] returns [Expression exp]:
+		(
+		    '*' { BinaryOperator operatorType = BinaryOperator.mult; }
+		    | '/' { BinaryOperator operatorType = BinaryOperator.div; }
+		)
+		rvalue = expressionUnary
+		{
+		    BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, operatorType);
+		}
+		rv = expressionMultTemp[tmp]
+		{
+		    $exp = $rv.exp;
+		}
+	    | { $exp = lvalue; }
 	;
 
     expressionUnary:

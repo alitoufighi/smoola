@@ -55,8 +55,24 @@ public class VisitorImpl implements Visitor {
                             .append(":Redefinition of class ").append(name).toString()
             );
 		}
-        SymbolTable.push(new SymbolTable());
 
+        if(classDeclaration.hasParent()){
+            String parentName = classDeclaration.getParentName().getName();
+            try {
+                SymbolTable.top.get(parentName.concat("@class"));
+                SymbolTable.push(Program.getClassSymbolTable(parentName));
+            }
+            catch (ItemNotFoundException e){
+                Program.addError(
+                        new StringBuilder("line:").append(classDeclaration.getLineNum())
+                                .append(":Undefined reference to ").append(parentName).toString()
+                );
+                SymbolTable.push(new SymbolTable());
+            }
+        }
+        else
+            SymbolTable.push(new SymbolTable());
+        
         classDeclaration.getName().accept(this);
         if(classDeclaration.hasParent()) {
             classDeclaration.getParentName().accept(this);
@@ -66,6 +82,7 @@ public class VisitorImpl implements Visitor {
         for(MethodDeclaration mdec : classDeclaration.getMethodDeclarations())
             mdec.accept(this);
 
+        Program.addClassSymbolTable(name, SymbolTable.top);
         SymbolTable.pop();
     }
 

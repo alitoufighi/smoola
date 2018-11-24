@@ -37,6 +37,10 @@ grammar Smoola;
         {
             VisitorImpl visitor = new VisitorImpl();
             program.accept(visitor);
+            if(program.isValid())
+                program.printMessages();
+            else
+                program.printErrors();
         }
     ;
 
@@ -45,14 +49,16 @@ grammar Smoola;
         'class' class_name = ID '{' 'def' method_name = ID '(' ')' ':' 'int' '{' st = statements 'return' rv = expression ';' '}' '}'
         {
             String classname = $class_name.getText();
-            String parentname = "";
+            String parentname = null;
 
             $c = new ClassDeclaration(new Identifier(classname, $class_name.getLine()), new Identifier(parentname,
                     $class_name.getLine()));
             $c.setLineNum($class_name.getLine());
 
-            MethodDeclaration mainMethod = new MethodDeclaration(new Identifier($method_name.getText(),
-                    $method_name.getLine()));
+            MethodDeclaration mainMethod = new MethodDeclaration(
+                new Identifier($method_name.getText(),
+                    $method_name.getLine())
+            );
 
             mainMethod.setReturnValue($rv.exp);
             mainMethod.setReturnType(new IntType());
@@ -72,9 +78,11 @@ grammar Smoola;
         ('extends' pname = ID { has_parent = true; })?
         {
             String classname = $name.getText();
-            String parentname = (has_parent) ? $pname.getText() : ""; // wtf?
-            $c = new ClassDeclaration(new Identifier(classname, $pname.getLine()),
-                                        new Identifier(parentname, $pname.getLine()));
+            String parentname = (has_parent) ? $pname.getText() : null;
+            $c = new ClassDeclaration(
+                new Identifier(classname, $name.getLine()),
+                (has_parent)? new Identifier(parentname, $pname.getLine()) : null
+            );
             $c.setLineNum($name.getLine());
         }
         '{'
@@ -410,9 +418,9 @@ grammar Smoola;
     expressionMemTemp[Expression instance] returns [Expression exp]:
 		'[' index = expression ']'
 		{
-		    $exp = new ArrayCall($instance, $index.exp);
+		    $exp = new ArrayCall(instance, $index.exp);
 		}
-	    | { $exp = $instance; }
+	    | { $exp = instance; }
 	;
 
 	expressionMethods returns [Expression exp]:
@@ -423,20 +431,18 @@ grammar Smoola;
 	;
 
 	expressionMethodsTemp[Expression instance] returns [Expression exp]:
+         { Expression e = null; }
 	     '.'
-//             {
-//                Expression e;
-//             }
-
+                (
 	            name = ID '(' ')'
 	                {
-	                    MethodCall e = new MethodCall(instance, new Identifier($name.getText(), $name.getLine()));
+	                    e = new MethodCall(instance, new Identifier($name.getText(), $name.getLine()));
 	                }
-	            | name = ID { MethodCall e = new MethodCall(instance, new Identifier($name.getText(), $name.getLine())); }
-	                    '(' (exp1 = expression { ((MethodCall)e).addArg($exp1.exp); })
+	            | name = ID { e = new MethodCall(instance, new Identifier($name.getText(), $name.getLine())); }
+	                    '(' (exp1 = expression {  ((MethodCall)e).addArg($exp1.exp); })
 	                    (',' exp2 = expression { ((MethodCall)e).addArg($exp2.exp); })* ')'
-	            | 'length' { Length e = new Length(instance); }
-
+	            | 'length' { e = new Length(instance); }
+	            )
 	    tmp = expressionMethodsTemp[e]
         {
             $exp = $tmp.exp;
@@ -451,6 +457,7 @@ grammar Smoola;
         |   'new ' 'int' '[' size = CONST_NUM ']'
             {
                 $exp = new NewArray();
+                $exp.setLineNum($size.getLine());
                 ((NewArray)$exp).setExpression(new IntValue(Integer.parseInt($size.getText()), new IntType()));
             }
         |   'new ' name = ID '(' ')' { $exp = new NewClass(new Identifier($name.getText(), $name.getLine())); } // set classdeclaration in symbol table
@@ -460,7 +467,7 @@ grammar Smoola;
         |	name = ID { $exp = new Identifier($name.getText(), $name.getLine()); }
         |   name = ID '[' index = expression ']'
             { $exp = new ArrayCall(new Identifier($name.getText(), $name.getLine()), $index.exp); }
-        |	'(' expression ')'
+        |	'(' xp = expression ')' { $exp = $xp.exp; }
 	;
 
 	type returns [Type t]:

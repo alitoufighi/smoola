@@ -6,7 +6,8 @@ import ast.node.declaration.ClassDeclaration;
 import java.util.List;
 
 public class Program {
-    public static boolean valid = true;
+    private static boolean valid = true;
+    private static int tempVars = 0;
     private ArrayList<ClassDeclaration> classes = new ArrayList<>();
     private ClassDeclaration mainClass;
     private static ArrayList<String> messages = new ArrayList<>();
@@ -30,9 +31,9 @@ public class Program {
             System.out.println(msg);
     }
 
-//    public Program(){
-//        valid = true; //until we find a bug
-//    }
+    public static int getNewTempVar() {
+        return ++tempVars;
+    }
 
     public static void invalidate() { valid = false; }
 

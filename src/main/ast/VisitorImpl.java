@@ -40,7 +40,10 @@ public class VisitorImpl implements Visitor {
         }
 		catch(ItemAlreadyExistsException e){
             try{
-                SymbolTable.top.put(new SymbolTableClassItem(name.concat("-temp"))); // now what?!?
+                SymbolTable.top.put(new SymbolTableClassItem(
+                        new StringBuilder("temp").append(Program.getNewTempVar())
+                                .append("-").append(name).toString())
+                ); // now what?!?
             }
             catch (ItemAlreadyExistsException e1){
                 // ?!?
@@ -81,7 +84,10 @@ public class VisitorImpl implements Visitor {
         }
 		catch (ItemAlreadyExistsException e){
             try{
-                SymbolTable.top.put(new SymbolTableMethodItem(name.concat("-temp"), argsType)); // now what?!?
+                SymbolTable.top.put(new SymbolTableMethodItem(
+                        new StringBuilder("temp").append(Program.getNewTempVar())
+                                .append("-").append(name).toString(), argsType)
+                ); // now what?!?
             }
             catch (ItemAlreadyExistsException e1){
                 // ?!?
@@ -119,7 +125,10 @@ public class VisitorImpl implements Visitor {
 		}
 		catch (ItemAlreadyExistsException e){
             try {
-                SymbolTable.top.put(new SymbolTableVariableItem(name.concat("-temp"), type)); // now what?!?
+                SymbolTable.top.put(new SymbolTableVariableItem(
+                        new StringBuilder("temp").append(Program.getNewTempVar())
+                                .append("-").append(name).toString(), type)
+                ); // now what?!?
             }
             catch (ItemAlreadyExistsException e1){
                 // ?!?
@@ -127,8 +136,8 @@ public class VisitorImpl implements Visitor {
             Program.invalidate();
 
             Program.addError(
-                    new StringBuilder("line:").append(varDeclaration.getLineNum())
-                            .append(":Redefinition of variable ").append(name).toString()
+                new StringBuilder("line:").append(varDeclaration.getLineNum())
+                        .append(":Redefinition of variable ").append(name).toString()
             );
         }
         varDeclaration.getIdentifier().accept(this);

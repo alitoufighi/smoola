@@ -11,6 +11,7 @@ public class VarDeclaration extends Declaration {
     public VarDeclaration(Identifier identifier, Type type) {
         this.identifier = identifier;
         this.type = type;
+        this.lineNum = identifier.getLineNum();
     }
 
     public Identifier getIdentifier() {

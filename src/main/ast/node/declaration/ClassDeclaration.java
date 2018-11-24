@@ -14,10 +14,15 @@ public class ClassDeclaration extends Declaration{
     public ClassDeclaration(Identifier name, Identifier parentName) {
         this.name = name;
         this.parentName = parentName;
+        this.lineNum = name.getLineNum();
     }
 
     public Identifier getName() {
         return name;
+    }
+
+    public boolean hasParent() {
+        return name == null;
     }
 
     public void setName(Identifier name) {

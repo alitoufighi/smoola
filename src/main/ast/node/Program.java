@@ -3,6 +3,9 @@ package ast.node;
 import ast.Visitor;
 import java.util.ArrayList;
 import ast.node.declaration.ClassDeclaration;
+import symbolTable.SymbolTable;
+
+import java.util.HashMap;
 import java.util.List;
 
 public class Program {
@@ -12,6 +15,15 @@ public class Program {
     private ClassDeclaration mainClass;
     private static ArrayList<String> messages = new ArrayList<>();
     private static ArrayList<String> errors = new ArrayList<>();
+    private static HashMap<String, SymbolTable> classesSymbolTable = new HashMap<>();
+
+    public static SymbolTable getClassSymbolTable(String className){
+        return classesSymbolTable.get(className);
+    }
+
+    public static void addClassSymbolTable(String name, SymbolTable st){
+        classesSymbolTable.put(name, st);
+    }
 
     public static void addMessage(String msg){
         messages.add(msg);

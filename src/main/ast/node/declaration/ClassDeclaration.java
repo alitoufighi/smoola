@@ -22,7 +22,7 @@ public class ClassDeclaration extends Declaration{
     }
 
     public boolean hasParent() {
-        return name == null;
+        return (parentName != null && parentName.getName() != null);
     }
 
     public void setName(Identifier name) {

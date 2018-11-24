@@ -4,14 +4,25 @@ class Main {
     }
 }
 
-class a {
-    var c : int[];
-    var c : String;
-    def b(c : int, e : d) : int {
-        x = new int[0];
-        return c - e.k()[5];
+
+class d {
+    def b() : String {
+        return "Salam";
     }
 }
 
-class a {
+class c extends d{
+    def a() : int {
+        return 0;
+    }
+}
+
+class a extends c{
+    var x : int[];
+    def b(c : int, e : d) : int {
+        return c - this.f()[5];
+    }
+    def f() : int {
+        return 0;
+    }
 }

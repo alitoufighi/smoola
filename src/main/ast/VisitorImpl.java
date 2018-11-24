@@ -41,8 +41,8 @@ public class VisitorImpl implements Visitor {
 		catch(ItemAlreadyExistsException e){
             try{
                 SymbolTable.top.put(new SymbolTableClassItem(
-                        new StringBuilder("temp").append(Program.getNewTempVar())
-                                .append("-").append(name).toString())
+                        "temp" + Program.getNewTempVar() +
+                                "-" + name)
                 ); // now what?!?
             }
             catch (ItemAlreadyExistsException e1){
@@ -51,8 +51,8 @@ public class VisitorImpl implements Visitor {
             Program.invalidate();
 
             Program.addError(
-                    new StringBuilder("line:").append(classDeclaration.getLineNum())
-                            .append(":Redefinition of class ").append(name).toString()
+                    "line:" + classDeclaration.getLineNum() +
+                            ":Redefinition of class " + name
             );
 		}
 
@@ -60,19 +60,19 @@ public class VisitorImpl implements Visitor {
             String parentName = classDeclaration.getParentName().getName();
             try {
                 SymbolTable.top.get(parentName.concat("@class"));
-                SymbolTable.push(Program.getClassSymbolTable(parentName));
+                SymbolTable.push(Program.getClassSymbolTable(parentName)); //TODO: symbol table needs to be copied
             }
             catch (ItemNotFoundException e){
                 Program.addError(
-                        new StringBuilder("line:").append(classDeclaration.getLineNum())
-                                .append(":Undefined reference to ").append(parentName).toString()
+                        "line:" + classDeclaration.getLineNum() +
+                                ":Undefined reference to " + parentName
                 );
                 SymbolTable.push(new SymbolTable());
             }
         }
         else
             SymbolTable.push(new SymbolTable());
-        
+
         classDeclaration.getName().accept(this);
         if(classDeclaration.hasParent()) {
             classDeclaration.getParentName().accept(this);
@@ -102,8 +102,8 @@ public class VisitorImpl implements Visitor {
 		catch (ItemAlreadyExistsException e){
             try{
                 SymbolTable.top.put(new SymbolTableMethodItem(
-                        new StringBuilder("temp").append(Program.getNewTempVar())
-                                .append("-").append(name).toString(), argsType)
+                        "temp" + Program.getNewTempVar() +
+                                "-" + name, argsType)
                 ); // now what?!?
             }
             catch (ItemAlreadyExistsException e1){
@@ -113,11 +113,11 @@ public class VisitorImpl implements Visitor {
             Program.invalidate();
 
             Program.addError(
-                    new StringBuilder("line:").append(methodDeclaration.getLineNum())
-                            .append(":Redefinition of method ").append(name).toString()
+                    "line:" + methodDeclaration.getLineNum() +
+                            ":Redefinition of method " + name
             );
         }
-        SymbolTable.push(SymbolTable.top);
+        SymbolTable.push(SymbolTable.top); //TODO: symbol table needs to be copied
 
         for(VarDeclaration arg : methodDeclaration.getArgs())
             arg.accept(this);
@@ -143,8 +143,8 @@ public class VisitorImpl implements Visitor {
 		catch (ItemAlreadyExistsException e){
             try {
                 SymbolTable.top.put(new SymbolTableVariableItem(
-                        new StringBuilder("temp").append(Program.getNewTempVar())
-                                .append("-").append(name).toString(), type)
+                        "temp" + Program.getNewTempVar() +
+                                "-" + name, type)
                 ); // now what?!?
             }
             catch (ItemAlreadyExistsException e1){
@@ -153,8 +153,8 @@ public class VisitorImpl implements Visitor {
             Program.invalidate();
 
             Program.addError(
-                new StringBuilder("line:").append(varDeclaration.getLineNum())
-                        .append(":Redefinition of variable ").append(name).toString()
+                    "line:" + varDeclaration.getLineNum() +
+                            ":Redefinition of variable " + name
             );
         }
         varDeclaration.getIdentifier().accept(this);
@@ -202,8 +202,8 @@ public class VisitorImpl implements Visitor {
         if(arraySize <= 0) {
             Program.invalidate();
             Program.addError(
-                    new StringBuilder("line:").append(newArray.getLineNum())
-                            .append(":Array length should not be zero or negative").toString()
+                "line:" + newArray.getLineNum() +
+                        ":Array length should not be zero or negative"
             );
         }
         else
@@ -256,7 +256,7 @@ public class VisitorImpl implements Visitor {
     public void visit(Block block) {
         Program.addMessage(block.toString());
 
-		SymbolTable.push(SymbolTable.top);
+		SymbolTable.push(SymbolTable.top); //TODO: symbol table needs to be copied
 
 		for(Statement stm : block.getBody())
 			stm.accept(this);

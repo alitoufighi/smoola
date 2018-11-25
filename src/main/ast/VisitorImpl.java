@@ -60,7 +60,7 @@ public class VisitorImpl implements Visitor {
             String parentName = classDeclaration.getParentName().getName();
             try {
                 SymbolTable.top.get(parentName.concat("@class"));
-                SymbolTable.push(Program.getClassSymbolTable(parentName)); //TODO: symbol table needs to be copied
+                SymbolTable.push(new SymbolTable(Program.getClassSymbolTable(parentName)));
             }
             catch (ItemNotFoundException e){
                 Program.addError(
@@ -96,7 +96,6 @@ public class VisitorImpl implements Visitor {
             argsType.add(var.getType());
 
         try {
-
             SymbolTable.top.put(new SymbolTableMethodItem(name, argsType));
         }
 		catch (ItemAlreadyExistsException e){
@@ -109,7 +108,6 @@ public class VisitorImpl implements Visitor {
             catch (ItemAlreadyExistsException e1){
                 // ?!?
             }
-
             Program.invalidate();
 
             Program.addError(
@@ -117,7 +115,7 @@ public class VisitorImpl implements Visitor {
                             ":Redefinition of method " + name
             );
         }
-        SymbolTable.push(SymbolTable.top); //TODO: symbol table needs to be copied
+        SymbolTable.push(new SymbolTable(SymbolTable.top));
 
         for(VarDeclaration arg : methodDeclaration.getArgs())
             arg.accept(this);
@@ -205,6 +203,7 @@ public class VisitorImpl implements Visitor {
                 "line:" + newArray.getLineNum() +
                         ":Array length should not be zero or negative"
             );
+            ((IntValue)newArray.getExpression()).setConstant(0); // default value to 0 (?!)
         }
         else
             Program.addMessage(newArray.toString());
@@ -256,7 +255,7 @@ public class VisitorImpl implements Visitor {
     public void visit(Block block) {
         Program.addMessage(block.toString());
 
-		SymbolTable.push(SymbolTable.top); //TODO: symbol table needs to be copied
+		SymbolTable.push(new SymbolTable(SymbolTable.top));
 
 		for(Statement stm : block.getBody())
 			stm.accept(this);

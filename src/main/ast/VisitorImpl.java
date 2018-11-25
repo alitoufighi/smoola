@@ -117,11 +117,11 @@ public class VisitorImpl implements Visitor {
         }
         SymbolTable.push(new SymbolTable(SymbolTable.top));
 
+        methodDeclaration.getName().accept(this);
         for(VarDeclaration arg : methodDeclaration.getArgs())
             arg.accept(this);
         for(VarDeclaration localVar : methodDeclaration.getLocalVars())
             localVar.accept(this);
-        methodDeclaration.getName().accept(this);
         for(Statement stm : methodDeclaration.getBody())
             stm.accept(this);
         methodDeclaration.getReturnValue().accept(this);
@@ -161,8 +161,8 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(ArrayCall arrayCall) {
         Program.addMessage(arrayCall.toString());
-		arrayCall.getIndex().accept(this);
-		arrayCall.getInstance().accept(this);
+        arrayCall.getInstance().accept(this);
+        arrayCall.getIndex().accept(this);
     }
 
     @Override
@@ -187,9 +187,8 @@ public class VisitorImpl implements Visitor {
     public void visit(MethodCall methodCall) {
     	Program.addMessage(methodCall.toString());
 
-		methodCall.getMethodName().accept(this);
-		methodCall.getInstance().accept(this);
-
+        methodCall.getInstance().accept(this);
+        methodCall.getMethodName().accept(this);
 		for(Expression arg : methodCall.getArgs())
 			arg.accept(this);
     }
@@ -267,8 +266,8 @@ public class VisitorImpl implements Visitor {
     public void visit(Conditional conditional) {
         Program.addMessage(conditional.toString());
 		conditional.getExpression().accept(this);
-		conditional.getAlternativeBody().accept(this);
-		conditional.getConsequenceBody().accept(this);
+        conditional.getConsequenceBody().accept(this);
+        conditional.getAlternativeBody().accept(this);
     }
 
     @Override

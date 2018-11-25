@@ -4,8 +4,8 @@ import java.util.*;
 
 public class SymbolTable {
 
-	SymbolTable pre;
-	HashMap<String, SymbolTableItem> items;
+	private SymbolTable pre;
+	private HashMap<String, SymbolTableItem> items = new HashMap<>();
 
 	// Static members region
 
@@ -28,13 +28,21 @@ public class SymbolTable {
 	// End of static members region
 
 	public SymbolTable() {
-		this(null);
+		pre = null;
 	}
 
-	public SymbolTable(SymbolTable pre) {
-		this.pre = pre;
-		this.items = new HashMap<String, SymbolTableItem>();
+	// this is a copy constructor
+	public SymbolTable(SymbolTable st){
+		this.pre = st.pre;
+        this.items = new HashMap<>();
+        for(Map.Entry<String, SymbolTableItem> entry : st.items.entrySet())
+            items.put(entry.getKey(), entry.getValue());
 	}
+
+//	public SymbolTable(SymbolTable pre) {
+//		this.pre = pre;
+//		this.items = new HashMap<String, SymbolTableItem>();
+//	}
 
 	public void put(SymbolTableItem item) throws ItemAlreadyExistsException {
 		if(items.containsKey(item.getKey()))

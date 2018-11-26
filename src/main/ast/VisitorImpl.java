@@ -67,6 +67,7 @@ public class VisitorImpl implements Visitor {
                         "line:" + classDeclaration.getLineNum() +
                                 ":Undefined reference to " + parentName
                 );
+                Program.invalidate();
                 SymbolTable.push(new SymbolTable());
             }
         }

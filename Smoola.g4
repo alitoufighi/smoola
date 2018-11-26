@@ -21,10 +21,7 @@ grammar Smoola;
 }
 
     program:
-        {
-            Program program = new Program();
-            SymbolTable.push(new SymbolTable());
-        }
+        { Program program = new Program(); }
         y = mainClass { program.setMainClass($y.c); } ( x = classDeclaration { program.addClass($x.c); } )* EOF
         {
             VisitorImpl visitor = new VisitorImpl();
@@ -43,8 +40,9 @@ grammar Smoola;
             String classname = $class_name.getText();
             String parentname = null;
 
-            $c = new ClassDeclaration(new Identifier(classname, $class_name.getLine()), new Identifier(parentname,
-                    $class_name.getLine()));
+            $c = new ClassDeclaration(new Identifier(classname, $class_name.getLine()),
+                new Identifier(parentname, $class_name.getLine())
+                );
             $c.setLineNum($class_name.getLine());
 
             MethodDeclaration mainMethod = new MethodDeclaration(
@@ -147,8 +145,7 @@ grammar Smoola;
     ;
 
     statementBlock returns [Block blk]:
-        '{'  stmts = statements '}'
-        { $blk = new Block($stmts.stmts); }
+        '{'  stmts = statements '}' { $blk = new Block($stmts.stmts); }
     ;
 
     statementCondition returns [Conditional cond]:
@@ -174,9 +171,10 @@ grammar Smoola;
     statementAssignment returns [Statement assign]:
         exp = expression ';'
         {
-            if ($exp.exp instanceof BinaryExpression)
+            if ($exp.exp instanceof BinaryExpression) {
                 if (((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.assign)
                     $assign = new Assign(((BinaryExpression)$exp.exp).getLeft(), ((BinaryExpression)$exp.exp).getRight());
+            }
             else
                 print("Error");
         }

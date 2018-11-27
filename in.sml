@@ -12,7 +12,7 @@ class d extends c{
 }
 
 class c{
-    def a() : int {
+    def b() : int {
         return 3;
     }
 }

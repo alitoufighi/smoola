@@ -68,3 +68,4 @@ public class SymbolTable {
 		return pre;
 	}
 }
+//TODO: fill reference to new class (User Defined Type)

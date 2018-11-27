@@ -3,6 +3,8 @@ package ast.node;
 import ast.Visitor;
 import java.util.ArrayList;
 import ast.node.declaration.ClassDeclaration;
+import com.sun.corba.se.spi.presentation.rmi.PresentationManager;
+import symbolTable.ClassData;
 import symbolTable.SymbolTable;
 
 import java.util.HashMap;
@@ -10,20 +12,17 @@ import java.util.List;
 
 public class Program {
     private static boolean valid = true;
+    public static int passNum = 0;
     private static int tempVars = 0;
     private ArrayList<ClassDeclaration> classes = new ArrayList<>();
     private ClassDeclaration mainClass;
     private static ArrayList<String> messages = new ArrayList<>();
     private static ArrayList<String> errors = new ArrayList<>();
-    private static HashMap<String, SymbolTable> classesSymbolTable = new HashMap<>();
+    public static HashMap<String, ClassData> classesData;
 
-    public static SymbolTable getClassSymbolTable(String className){
-        return classesSymbolTable.get(className);
-    }
-
-    public static void addClassSymbolTable(String name, SymbolTable st){
-        classesSymbolTable.put(name, st);
-    }
+//    public static void addClassSymbolTable(String name, SymbolTable st){
+//        classesSymbolTable.put(name, st);
+//    }
 
     public static void addMessage(String msg){
         messages.add(msg);

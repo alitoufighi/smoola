@@ -22,10 +22,23 @@ public class VisitorImpl implements Visitor {
 
 		SymbolTable.push(new SymbolTable());
 
+		ClassDeclaration cl = program.getMainClass();
+		Program.classesData.put(cl.getName().getName(), new ClassData(cl));
+
+		for(ClassDeclaration c : program.getClasses()){
+		    System.out.println(c.getName().getName());
+		    ClassData data = new ClassData(c);
+		    Program.classesData.put(c.getName().getName(), data);
+        }
+
 		program.getMainClass().accept(this);
+
 
 		for (ClassDeclaration classDeclaration : program.getClasses())
 			classDeclaration.accept(this);
+
+
+		////////////
 
 		SymbolTable.pop();
 	}
@@ -60,7 +73,8 @@ public class VisitorImpl implements Visitor {
             String parentName = classDeclaration.getParentName().getName();
             try {
                 SymbolTable.top.get(parentName.concat("@class"));
-                SymbolTable.push(new SymbolTable(Program.getClassSymbolTable(parentName)));
+
+                SymbolTable.push(new SymbolTable(Program.classesData.get(parentName).getSymbolTable()));
             }
             catch (ItemNotFoundException e){
                 Program.addError(
@@ -83,7 +97,7 @@ public class VisitorImpl implements Visitor {
         for(MethodDeclaration mdec : classDeclaration.getMethodDeclarations())
             mdec.accept(this);
 
-        Program.addClassSymbolTable(name, SymbolTable.top);
+//        Program.addClassSymbolTable(name, SymbolTable.top);
         SymbolTable.pop();
     }
 

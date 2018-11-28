@@ -370,33 +370,3 @@ grammar Smoola;
     WS:
     	[ \t] -> skip
     ;
-
-expressionAdd returns [Expression _expadd]:
-
-        (expmul=expressionMult expaddt=expressionAddTemp
-        {
-            ((BinaryExpression)$expaddt._expaddt).setLeft($expmul._expmul);
-            $_expadd=$expaddt._expaddt;
-        })|
-    expmul=expressionMult{$_expadd=$expmul._expmul;}
-  ;
-
-expressionAddTemp returns [Expression _expaddt]:
-        (op=('+' | '-') expmul=expressionMult expaddt=expressionAddTemp
-        {
-        ((BinaryExpression)$expaddt._expaddt).setLeft($expmul._expmul);
-
-        if($op.text.equals(new String("+")))
-            $_expaddt=new BinaryExpression($expaddt._expaddt,BinaryOperator.add);
-        else
-            $_expaddt=new BinaryExpression($expaddt._expaddt,BinaryOperator.sub);
-        })
-        |
-        (op=('+'| '-' ) expmul2=expressionMult
-        {
-        if($op.text.equals(new String("+")))
-            $_expaddt=new BinaryExpression($expmul2._expmul,BinaryOperator.add);
-        else
-            $_expaddt=new BinaryExpression($expmul2._expmul,BinaryOperator.sub);
-        })
-    ;

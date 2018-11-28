@@ -33,7 +33,6 @@ public class VisitorImpl implements Visitor {
 
         for (ClassDeclaration c : program.getClasses())
             Program.addSymbolTableItems(Program.getClassSymbolTable(c.getName().getName()), c);
-//            classDeclaration.accept(this);
 
 		SymbolTable.pop();
 	}
@@ -57,12 +56,12 @@ public class VisitorImpl implements Visitor {
                 catch (ItemAlreadyExistsException e1){
                     // ?!?
                 }
-//                Program.invalidate();
-//
-//                Program.addError(
-//                        "line:" + classDeclaration.getLineNum() +
-//                                ":Redefinition of class " + name
-//                );
+                Program.invalidate();
+
+                Program.addError(
+                        "line:" + classDeclaration.getLineNum() +
+                                ":Redefinition of class " + name
+                );
             }
         }
 

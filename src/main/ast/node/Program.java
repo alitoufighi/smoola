@@ -110,11 +110,16 @@ public class Program {
     }
 
     public void addClass(ClassDeclaration classDeclaration) {
-        classes.add(classDeclaration);
+        classes.put(classDeclaration.getName().getName(), classDeclaration);
     }
 
     public List<ClassDeclaration> getClasses() {
-        return classes;
+        ArrayList<ClassDeclaration> tempList = new ArrayList<>();
+        for (String str : classes.keySet()) {
+			tempList.add(classes.get(str));
+        }
+
+        return tempList;
     }
 
     @Override

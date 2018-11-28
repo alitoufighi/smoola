@@ -24,55 +24,72 @@ public class VisitorImpl implements Visitor {
 
 		program.getMainClass().accept(this);
 
+		Program.passNum = 1;
+
 		for (ClassDeclaration classDeclaration : program.getClasses())
 			classDeclaration.accept(this);
+
+		Program.passNum = 2;
+
+        for (ClassDeclaration c : program.getClasses())
+            Program.addSymbolTableItems(Program.getClassSymbolTable(c.getName().getName()), c);
+//            classDeclaration.accept(this);
 
 		SymbolTable.pop();
 	}
 
     @Override
     public void visit(ClassDeclaration classDeclaration) {
-    	String name = classDeclaration.getName().getName();
+        String name = classDeclaration.getName().getName();
 
-    	Program.addMessage(classDeclaration.toString());
-        try{
-			SymbolTable.top.put(new SymbolTableClassItem(name));
-        }
-		catch(ItemAlreadyExistsException e){
+        if(Program.passNum == 1){
+            Program.addMessage(classDeclaration.toString());
             try{
-                SymbolTable.top.put(new SymbolTableClassItem(
-                        "temp" + Program.getNewTempVar() +
-                                "-" + name)
-                ); // now what?!?
+                SymbolTable.top.put(new SymbolTableClassItem(name));
             }
-            catch (ItemAlreadyExistsException e1){
-                // ?!?
-            }
-            Program.invalidate();
-
-            Program.addError(
-                    "line:" + classDeclaration.getLineNum() +
-                            ":Redefinition of class " + name
-            );
-		}
-
-        if(classDeclaration.hasParent()){
-            String parentName = classDeclaration.getParentName().getName();
-            try {
-                SymbolTable.top.get(parentName.concat("@class"));
-                SymbolTable.push(new SymbolTable(Program.getClassSymbolTable(parentName)));
-            }
-            catch (ItemNotFoundException e){
-                Program.addError(
-                        "line:" + classDeclaration.getLineNum() +
-                                ":Undefined reference to " + parentName
-                );
-                Program.invalidate();
-                SymbolTable.push(new SymbolTable());
+            catch(ItemAlreadyExistsException e){
+                try {
+                    SymbolTable.top.put(new SymbolTableClassItem(
+                            "temp" + Program.getNewTempVar() +
+                                    "-" + name)
+                    ); // now what?!?
+                }
+                catch (ItemAlreadyExistsException e1){
+                    // ?!?
+                }
+//                Program.invalidate();
+//
+//                Program.addError(
+//                        "line:" + classDeclaration.getLineNum() +
+//                                ":Redefinition of class " + name
+//                );
             }
         }
-        else
-            SymbolTable.push(new SymbolTable());
+
+
+//        if(classDeclaration.hasParent()){
+//            String parentName = classDeclaration.getParentName().getName();
+//            try {
+//                SymbolTable.top.get(parentName.concat("@class"));
+//                SymbolTable.push(new SymbolTable(Program.getClassSymbolTable(parentName)));
+//            }
+//            catch (ItemNotFoundException e){
+//                if(Program.passNum == 2){
+////                    Program.invalidate();
+////                    Program.addError(
+////                            "line:" + classDeclaration.getLineNum() +
+////                                    ":Undefined reference to " + parentName
+////                    );
+//                }
+//                SymbolTable.push(new SymbolTable());
+//            }
+//        }
+//        else
+//            SymbolTable.push(new SymbolTable());
+
+
+        SymbolTable.push(new SymbolTable());
+
 
         classDeclaration.getName().accept(this);
         if(classDeclaration.hasParent()) {

@@ -11,7 +11,7 @@ public class SymbolTable {
 
 	public static SymbolTable top;
 	
-	private static Stack<SymbolTable> stack = new Stack<SymbolTable>();
+	private static Stack<SymbolTable> stack = new Stack<>();
 
 	// Use it in pass 1 scope start
 	public static void push(SymbolTable symbolTable) {
@@ -19,6 +19,8 @@ public class SymbolTable {
 			stack.push(top);
 		top = symbolTable;
 	}
+
+	public HashMap<String, SymbolTableItem> getItems() { return items; }
 
 	// Use it in pass1 scope end
 	public static void pop() {

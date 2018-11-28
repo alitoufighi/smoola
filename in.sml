@@ -6,7 +6,7 @@ class Main {
 
 
 class d extends c{
-    def b() : String {
+    def a() : String {
         return "Salam";
     }
 }

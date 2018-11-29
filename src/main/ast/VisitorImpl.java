@@ -45,7 +45,6 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(ClassDeclaration classDeclaration) {
         String name = classDeclaration.getName().getName();
-
         if(Program.passNum == 1){
 
             try{
@@ -73,7 +72,7 @@ public class VisitorImpl implements Visitor {
             SymbolTable.push(new SymbolTable());
 
             for(VarDeclaration vdec : classDeclaration.getVarDeclarations())
-                vdec.accept(this);
+                vdec.accept(this, VarVisitType.InClass);
             for(MethodDeclaration mdec : classDeclaration.getMethodDeclarations())
                 mdec.accept(this);
 
@@ -162,17 +161,13 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(VarDeclaration varDeclaration, VarVisitType visitType) {
         String name = varDeclaration.getIdentifier().getName();
-        if(Program.passNum == 1){
-            Type type = varDeclaration.getType();
-            putVariableItemToTopSymbolTable(varDeclaration, name, type);
-        }
+        if(Program.passNum == 1)
+            putVariableItemToTopSymbolTable(varDeclaration, name);
         else if(Program.passNum == 2){
             // if we're in accepting a local variable of a method,
             // we should try to put it in symbol table
-            if(visitType == VarVisitType.InMethod){
-                Type type = varDeclaration.getType();
-                putVariableItemToTopSymbolTable(varDeclaration, name, type);
-            }
+            if(visitType == VarVisitType.InMethod)
+                putVariableItemToTopSymbolTable(varDeclaration, name);
 
             Program.addMessage(varDeclaration.toString());
 
@@ -180,7 +175,8 @@ public class VisitorImpl implements Visitor {
         }
     }
 
-    private void putVariableItemToTopSymbolTable(VarDeclaration varDeclaration, String name, Type type) {
+    private void putVariableItemToTopSymbolTable(VarDeclaration varDeclaration, String name) {
+        Type type = varDeclaration.getType();
         try{
             SymbolTable.top.put(new SymbolTableVariableItem(name, type));
         }
@@ -299,12 +295,12 @@ public class VisitorImpl implements Visitor {
     public void visit(Block block) {
         Program.addMessage(block.toString());
 
-		SymbolTable.push(new SymbolTable(SymbolTable.top));
+//		SymbolTable.push(new SymbolTable(SymbolTable.top));
 
 		for(Statement stm : block.getBody())
 			stm.accept(this);
 
-		SymbolTable.pop();
+//		SymbolTable.pop();
     }
 
     @Override

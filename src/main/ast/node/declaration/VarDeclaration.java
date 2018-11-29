@@ -1,6 +1,7 @@
 package ast.node.declaration;
 
 import ast.Type.Type;
+import ast.VarVisitType;
 import ast.Visitor;
 import ast.node.expression.Identifier;
 
@@ -34,8 +35,9 @@ public class VarDeclaration extends Declaration {
     public String toString() {
         return "VarDeclaration";
     }
-    @Override
-    public void accept(Visitor visitor) {
-        visitor.visit(this);
+
+//    @Override
+    public void accept(Visitor visitor, VarVisitType visitType) {
+        visitor.visit(this, visitType);
     }
 }

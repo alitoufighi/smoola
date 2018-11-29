@@ -6,14 +6,13 @@ import ast.node.expression.*;
 import ast.node.expression.Value.*;
 import ast.node.statement.*;
 
-
 public interface Visitor {
     void visit (Program program);
 
     //Declarations
     void visit (ClassDeclaration classDeclaration);
     void visit (MethodDeclaration methodDeclaration);
-    void visit (VarDeclaration varDeclaration);
+    void visit (VarDeclaration varDeclaration, VarVisitType visitType);
 
     //Expressions
     void visit(ArrayCall arrayCall);

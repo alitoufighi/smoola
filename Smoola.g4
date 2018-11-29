@@ -73,7 +73,6 @@ grammar Smoola;
                 new Identifier(classname, $name.getLine()),
                 (has_parent)? new Identifier(parentname, $pname.getLine()) : null
             );
-            $c.setLineNum($name.getLine());
         }
         '{'
         (var = varDeclaration { $c.addVarDeclaration($var.var); })*
@@ -226,7 +225,7 @@ grammar Smoola;
 		{ $exp = $right.exp; }
 	;
 
-    expressionEqTemp[Expression lvalue] returns  [Expression exp]:
+    expressionEqTemp[Expression lvalue] returns [Expression exp]:
         { BinaryOperator operatorType; }
 		('==' { operatorType = BinaryOperator.eq; } | '<>' { operatorType = BinaryOperator.neq; })
 		rvalue = expressionCmp { BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, operatorType); }

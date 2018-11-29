@@ -5,9 +5,19 @@ class Main {
 }
 
 
+
 class d extends c{
-    def a() : String {
+    var y : String;
+    def s(y : int) : String {
+        var y : int;
         return "Salam";
+    }
+}
+
+class a extends d{
+    var x : int[];
+    def g() : int {
+        return 4;
     }
 }
 
@@ -17,12 +27,9 @@ class c{
     }
 }
 
-class a extends d{
-    var x : int[];
-    def a() : int {
-        return 4;
-    }
-}
+
+
+
 
 class Test{
     def main(): int{

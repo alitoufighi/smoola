@@ -22,17 +22,22 @@ public class VisitorImpl implements Visitor {
 
 		SymbolTable.push(new SymbolTable());
 
-		program.getMainClass().accept(this);
+        Program.passNum = 1;
 
-		Program.passNum = 1;
+        program.getMainClass().accept(this);
 
 		for (ClassDeclaration classDeclaration : program.getClasses())
-			classDeclaration.accept(this);
-
-		Program.passNum = 2;
+            classDeclaration.accept(this);
 
         for (ClassDeclaration c : program.getClasses())
             Program.addSymbolTableItems(Program.getClassSymbolTable(c.getName().getName()), c);
+
+        Program.passNum = 2;
+
+        program.getMainClass().accept(this);
+
+        for (ClassDeclaration classDeclaration : program.getClasses())
+            classDeclaration.accept(this);
 
 		SymbolTable.pop();
 	}
@@ -42,15 +47,16 @@ public class VisitorImpl implements Visitor {
         String name = classDeclaration.getName().getName();
 
         if(Program.passNum == 1){
-            Program.addMessage(classDeclaration.toString());
+
             try{
                 SymbolTable.top.put(new SymbolTableClassItem(name));
             }
             catch(ItemAlreadyExistsException e){
                 try {
                     SymbolTable.top.put(new SymbolTableClassItem(
-                            "temp" + Program.getNewTempVar() +
-                                    "-" + name)
+                    "temp" + Program.getNewTempVar() +
+                            "-" + name
+                            )
                     ); // now what?!?
                 }
                 catch (ItemAlreadyExistsException e1){
@@ -59,103 +65,126 @@ public class VisitorImpl implements Visitor {
                 Program.invalidate();
 
                 Program.addError(
-                        "line:" + classDeclaration.getLineNum() +
-                                ":Redefinition of class " + name
+                    "line:" + classDeclaration.getLineNum() +
+                            ":Redefinition of class " + name
                 );
             }
+
+            SymbolTable.push(new SymbolTable());
+
+            for(VarDeclaration vdec : classDeclaration.getVarDeclarations())
+                vdec.accept(this);
+            for(MethodDeclaration mdec : classDeclaration.getMethodDeclarations())
+                mdec.accept(this);
+
+            Program.addClassSymbolTable(name, SymbolTable.top);
+            SymbolTable.pop();
         }
+        else if (Program.passNum == 2){
+            Program.addMessage(classDeclaration.toString());
 
+            if(classDeclaration.hasParent()){
+                String parentName = classDeclaration.getParentName().getName();
+                try {
+                    SymbolTable.top.get(parentName.concat("@class"));
+                }
+                catch (ItemNotFoundException e){
+                    Program.invalidate();
+                    Program.addError(
+                        "line:" + classDeclaration.getLineNum() +
+                                ":Undefined reference to " + parentName
+                    );
+                }
+            }
 
-//        if(classDeclaration.hasParent()){
-//            String parentName = classDeclaration.getParentName().getName();
-//            try {
-//                SymbolTable.top.get(parentName.concat("@class"));
-//                SymbolTable.push(new SymbolTable(Program.getClassSymbolTable(parentName)));
-//            }
-//            catch (ItemNotFoundException e){
-//                if(Program.passNum == 2){
-////                    Program.invalidate();
-////                    Program.addError(
-////                            "line:" + classDeclaration.getLineNum() +
-////                                    ":Undefined reference to " + parentName
-////                    );
-//                }
-//                SymbolTable.push(new SymbolTable());
-//            }
-//        }
-//        else
-//            SymbolTable.push(new SymbolTable());
+            SymbolTable.push(new SymbolTable(Program.getClassSymbolTable(name)));
 
+            classDeclaration.getName().accept(this);
+            if(classDeclaration.hasParent())
+                classDeclaration.getParentName().accept(this);
+            for(VarDeclaration vdec : classDeclaration.getVarDeclarations())
+                vdec.accept(this, VarVisitType.InClass);
+            for(MethodDeclaration mdec : classDeclaration.getMethodDeclarations())
+                mdec.accept(this);
 
-        SymbolTable.push(new SymbolTable());
-
-
-        classDeclaration.getName().accept(this);
-        if(classDeclaration.hasParent()) {
-            classDeclaration.getParentName().accept(this);
+            SymbolTable.pop();
         }
-        for(VarDeclaration vdec : classDeclaration.getVarDeclarations())
-            vdec.accept(this);
-        for(MethodDeclaration mdec : classDeclaration.getMethodDeclarations())
-            mdec.accept(this);
-
-        Program.addClassSymbolTable(name, SymbolTable.top);
-        SymbolTable.pop();
     }
 
     @Override
     public void visit(MethodDeclaration methodDeclaration) {
     	String name = methodDeclaration.getName().getName();
+        if(Program.passNum == 1){
 
-    	Program.addMessage(methodDeclaration.toString());
-        ArrayList<Type> argsType = new ArrayList<>();
-        for(VarDeclaration var : methodDeclaration.getArgs())
-            argsType.add(var.getType());
+            ArrayList<Type> argsType = new ArrayList<>();
+            for(VarDeclaration var : methodDeclaration.getArgs())
+                argsType.add(var.getType());
 
-        try {
-            SymbolTable.top.put(new SymbolTableMethodItem(name, argsType));
-        }
-		catch (ItemAlreadyExistsException e){
-            try{
-                SymbolTable.top.put(new SymbolTableMethodItem(
+            try {
+                SymbolTable.top.put(new SymbolTableMethodItem(name, argsType));
+            }
+            catch (ItemAlreadyExistsException e){
+                try{
+                    SymbolTable.top.put(new SymbolTableMethodItem(
                         "temp" + Program.getNewTempVar() +
                                 "-" + name, argsType)
-                ); // now what?!?
-            }
-            catch (ItemAlreadyExistsException e1){
-                // ?!?
-            }
-            Program.invalidate();
+                    ); // now what?!?
+                }
+                catch (ItemAlreadyExistsException e1){
+                    // ?!?
+                }
+                Program.invalidate();
 
-            Program.addError(
+                Program.addError(
                     "line:" + methodDeclaration.getLineNum() +
                             ":Redefinition of method " + name
-            );
+                );
+            }
         }
-        SymbolTable.push(new SymbolTable(SymbolTable.top));
+        else if(Program.passNum == 2){
+            Program.addMessage(methodDeclaration.toString());
 
-        methodDeclaration.getName().accept(this);
-        for(VarDeclaration arg : methodDeclaration.getArgs())
-            arg.accept(this);
-        for(VarDeclaration localVar : methodDeclaration.getLocalVars())
-            localVar.accept(this);
-        for(Statement stm : methodDeclaration.getBody())
-            stm.accept(this);
-        methodDeclaration.getReturnValue().accept(this);
+            SymbolTable.push(new SymbolTable(SymbolTable.top));
 
-        SymbolTable.pop();
+            methodDeclaration.getName().accept(this);
+            for(VarDeclaration arg : methodDeclaration.getArgs())
+                arg.accept(this, VarVisitType.InMethod);
+            for(VarDeclaration localVar : methodDeclaration.getLocalVars())
+                localVar.accept(this, VarVisitType.InMethod);
+            for(Statement stm : methodDeclaration.getBody())
+                stm.accept(this);
+            methodDeclaration.getReturnValue().accept(this);
+
+            SymbolTable.pop();
+        }
     }
 
     @Override
-    public void visit(VarDeclaration varDeclaration) {
-		String name = varDeclaration.getIdentifier().getName();
-		Type type = varDeclaration.getType();
-		Program.addMessage(varDeclaration.toString());
-        try{
-			SymbolTable.top.put(new SymbolTableVariableItem(name, type));
+    public void visit(VarDeclaration varDeclaration, VarVisitType visitType) {
+        String name = varDeclaration.getIdentifier().getName();
+        if(Program.passNum == 1){
+            Type type = varDeclaration.getType();
+            putVariableItemToTopSymbolTable(varDeclaration, name, type);
+        }
+        else if(Program.passNum == 2){
+            // if we're in accepting a local variable of a method,
+            // we should try to put it in symbol table
+            if(visitType == VarVisitType.InMethod){
+                Type type = varDeclaration.getType();
+                putVariableItemToTopSymbolTable(varDeclaration, name, type);
+            }
 
-		}
-		catch (ItemAlreadyExistsException e){
+            Program.addMessage(varDeclaration.toString());
+
+            varDeclaration.getIdentifier().accept(this);
+        }
+    }
+
+    private void putVariableItemToTopSymbolTable(VarDeclaration varDeclaration, String name, Type type) {
+        try{
+            SymbolTable.top.put(new SymbolTableVariableItem(name, type));
+        }
+        catch (ItemAlreadyExistsException e){
             try {
                 SymbolTable.top.put(new SymbolTableVariableItem(
                         "temp" + Program.getNewTempVar() +
@@ -168,11 +197,10 @@ public class VisitorImpl implements Visitor {
             Program.invalidate();
 
             Program.addError(
-                    "line:" + varDeclaration.getLineNum() +
-                            ":Redefinition of variable " + name
+                "line:" + varDeclaration.getLineNum() +
+                        ":Redefinition of variable " + name
             );
         }
-        varDeclaration.getIdentifier().accept(this);
     }
 
     @Override

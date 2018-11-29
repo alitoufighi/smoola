@@ -23,8 +23,8 @@ public class SymbolTable {
 	public HashMap<String, SymbolTableItem> getItems() { return items; }
 
 	// Use it in pass1 scope end
-	public static void pop() {
-		top = stack.pop();
+	public static SymbolTable pop() {
+		return top = stack.pop();
 	}
 
 	// End of static members region

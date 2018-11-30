@@ -1,5 +1,7 @@
 package ast;
 
+import ast.Type.UserDefinedType.UserDefinedType;
+import ast.node.PhaseNum;
 import ast.node.Program;
 import ast.node.declaration.ClassDeclaration;
 import ast.node.declaration.MethodDeclaration;
@@ -10,6 +12,7 @@ import ast.node.expression.Value.IntValue;
 import ast.node.expression.Value.StringValue;
 import ast.node.statement.*;
 import ast.Type.Type;
+import org.omg.CosNaming.NamingContextPackage.NotFound;
 import symbolTable.*;
 
 import java.util.ArrayList;
@@ -66,7 +69,7 @@ public class VisitorImpl implements Visitor {
                 Program.addError(
                     "line:" + classDeclaration.getLineNum() +
                             ":Redefinition of class " + name
-                );
+                , PhaseNum.two);
             }
 
             SymbolTable.push(new SymbolTable());
@@ -91,8 +94,8 @@ public class VisitorImpl implements Visitor {
                     Program.invalidate();
                     Program.addError(
                         "line:" + classDeclaration.getLineNum() +
-                                ":Undefined reference to " + parentName
-                    );
+                                ":class " + parentName + " is not declared"
+                    , PhaseNum.three);
                 }
             }
 
@@ -137,11 +140,15 @@ public class VisitorImpl implements Visitor {
                 Program.addError(
                     "line:" + methodDeclaration.getLineNum() +
                             ":Redefinition of method " + name
-                );
+                , PhaseNum.two);
             }
         }
         else if(Program.passNum == 2){
             Program.addMessage(methodDeclaration.toString());
+
+
+            Type varType = methodDeclaration.getReturnType();
+            setUserDefinedType(varType);
 
             SymbolTable.push(new SymbolTable(SymbolTable.top));
 
@@ -158,12 +165,30 @@ public class VisitorImpl implements Visitor {
         }
     }
 
+    private void setUserDefinedType(Type varType) {
+        if(varType instanceof UserDefinedType){
+            String className = ((UserDefinedType)varType).getName().getName();
+            try{
+                ((UserDefinedType) varType).setClassDeclaration(Program.getClass(className));
+            } catch (NotFound e){
+                Program.invalidate();
+                Program.addError(
+                        "line:" + ((UserDefinedType) varType).getName().getLineNum() +
+                                ":class " + className + " is not declared"
+                        , PhaseNum.three);
+            }
+        }
+    }
+
     @Override
     public void visit(VarDeclaration varDeclaration, VarVisitType visitType) {
         String name = varDeclaration.getIdentifier().getName();
         if(Program.passNum == 1)
             putVariableItemToTopSymbolTable(varDeclaration, name);
         else if(Program.passNum == 2){
+            Type varType = varDeclaration.getType();
+            setUserDefinedType(varType);
+
             // if we're in accepting a local variable of a method,
             // we should try to put it in symbol table
             if(visitType == VarVisitType.InMethod)
@@ -191,11 +216,10 @@ public class VisitorImpl implements Visitor {
                 // ?!?
             }
             Program.invalidate();
-
             Program.addError(
                 "line:" + varDeclaration.getLineNum() +
                         ":Redefinition of variable " + name
-            );
+            , PhaseNum.two);
         }
     }
 
@@ -228,6 +252,67 @@ public class VisitorImpl implements Visitor {
     public void visit(MethodCall methodCall) {
     	Program.addMessage(methodCall.toString());
 
+        // 5. in phase 3:
+        // a.b()
+        // a is instance, b is method name
+        // if instance instanceof NewClass, when creating a new object
+        // if instance identifiere, bayad bbinim typesh chie!
+        // if instance methodCalle, returnType?!
+        String methodName = methodCall.getMethodName().getName();
+        Expression instance = methodCall.getInstance();
+        if(instance instanceof NewClass){
+            String className = ((NewClass) instance).getClassName().getName();
+            try{
+                Program.getClass(className);
+
+            } catch (NotFound e){
+                Program.invalidate();
+
+                Program.addError(
+                "line:" + ((NewClass) instance).getClassName().getLineNum() +
+                        ":there is no method named " + methodName +
+                        " in class " + className
+                , PhaseNum.three);
+            }
+        }
+        else if(instance instanceof Identifier){
+            String instanceVarName = ((Identifier) instance).getName(); // variable of instance
+
+            try{
+                SymbolTableItem item = SymbolTable.top.get(instanceVarName.concat("@var")); //this may raise exception
+
+                if(item instanceof SymbolTableVariableItem){
+                    Type instanceType = ((SymbolTableVariableItem) item).getType();
+                    if(instanceType instanceof UserDefinedType){
+                        String className = ((UserDefinedType) instanceType).getName().getName();
+                        try{
+                            Program.getClass(className);
+
+                        } catch (NotFound e){
+                            Program.invalidate();
+
+                            Program.addError(
+                                    "line:" + instance.getLineNum() +
+                                            ":there is no method named " + methodName +
+                                            " in class " + className
+                                    , PhaseNum.three);
+                        }
+//                        String className = ((NewClass) instance).getClassName().getName();
+                    }
+
+                }
+
+            } catch (ItemNotFoundException e){
+                Program.invalidate();
+
+                Program.addError(
+                        "line:" + methodCall.getMethodName().getLineNum() +
+                                ":variable " + instanceVarName +
+                                " is not declared"
+                        , PhaseNum.three);
+            }
+        }
+
         methodCall.getInstance().accept(this);
         methodCall.getMethodName().accept(this);
 		for(Expression arg : methodCall.getArgs())
@@ -242,7 +327,7 @@ public class VisitorImpl implements Visitor {
             Program.addError(
                 "line:" + newArray.getLineNum() +
                         ":Array length should not be zero or negative"
-            );
+            , PhaseNum.two);
             ((IntValue)newArray.getExpression()).setConstant(0); // default value to 0 (?!)
         }
         else

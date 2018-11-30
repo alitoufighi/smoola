@@ -4,24 +4,15 @@ class Main {
     }
 }
 
-
-
-class d extends c{
-    var y : String;
-    def s(y : int) : String {
-        var y : int;
-        return "Salam";
+class d{
+    var y : string;
+    def g() : string {
+        return "Res";
     }
 }
 
-class a extends d{
-    var x : int[];
-    def g() : int {
-        return 4;
-    }
-}
-
-class c{
+class c extends d{
+    var y : string;
     def a() : int {
         return 3;
     }
@@ -29,6 +20,15 @@ class c{
 
 
 
+
+class a extends d{
+    var x : int[];
+    def y(z: int, b: int[]) : int {
+        var v: int;
+        v = new int[1];
+        return 4;
+    }
+}
 
 
 class Test{

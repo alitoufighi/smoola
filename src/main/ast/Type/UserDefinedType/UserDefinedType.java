@@ -23,7 +23,12 @@ public class UserDefinedType extends Type {
         this.name = name;
     }
 
-    private Identifier name;
+    public UserDefinedType(Identifier name) {
+        this.name = name;
+        this.classDeclaration = null;
+    }
+
+    private Identifier name; // assumption: `name` is name of the type (which equals classDeclaration.getName() )
 
     @Override
     public String toString() {

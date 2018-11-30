@@ -18,6 +18,7 @@ grammar Smoola;
     import ast.node.expression.Value.*;
     import ast.node.Program;
     import symbolTable.SymbolTable;
+    import ast.node.PhaseNum;
 }
 
     program:
@@ -29,7 +30,7 @@ grammar Smoola;
             if(program.isValid())
                 program.printMessages();
             else
-                program.printErrors();
+                program.printErrors(PhaseNum.two);
         }
     ;
 
@@ -343,7 +344,7 @@ grammar Smoola;
 	    |
 	    'int' '[' ']' { $t = new ArrayType(); }
 	    |
-	    ID { $t = new UserDefinedType(); }
+	    name = ID { $t = new UserDefinedType(new Identifier($name.getText(), $name.getLine())); }
 	;
 
     CONST_NUM:

@@ -7,6 +7,7 @@ import java.util.*;
 import ast.node.declaration.ClassDeclaration;
 import ast.node.declaration.MethodDeclaration;
 import ast.node.declaration.VarDeclaration;
+import org.omg.CosNaming.NamingContextPackage.NotFound;
 import symbolTable.SymbolTable;
 import symbolTable.SymbolTableItem;
 import symbolTable.ItemAlreadyExistsException;
@@ -19,10 +20,11 @@ public class Program {
     private static LinkedHashMap<String, ClassDeclaration> classes = new LinkedHashMap<>();
     private ClassDeclaration mainClass;
     private static ArrayList<String> messages = new ArrayList<>();
-    private static ArrayList<String> errors = new ArrayList<>();
+    private static ArrayList<String> errorsPhase2 = new ArrayList<>();
+    private static ArrayList<String> errorsPhase3 = new ArrayList<>();
     private static HashMap<String, SymbolTable> classesSymbolTable = new HashMap<>();
 
-    public SymbolTable getSymbolTable(String className) { return classesSymbolTable.get(className); }
+//    public SymbolTable getSymbolTable(String className) { return classesSymbolTable.get(className); }
 
     public static SymbolTable getClassSymbolTable(String className){
         return classesSymbolTable.get(className);
@@ -36,7 +38,8 @@ public class Program {
         messages.add(msg);
     }
 
-    public static void addError(String error){
+    public static void addError(String error, PhaseNum phaseNum){
+        ArrayList<String> errors = (phaseNum == PhaseNum.two) ? errorsPhase2 : errorsPhase3;
         if(!errors.contains(error))
             errors.add(error);
     }
@@ -45,6 +48,15 @@ public class Program {
         ClassDeclaration parent = current;
 
         while(parent.hasParent()){
+
+            if(!classes.containsKey(parent.getParentName().getName())){
+                Program.invalidate();
+                Program.addError(
+                        "line:" + parent.getLineNum() +
+                                ":class " + parent.getParentName().getName() + " is not declared"
+                        , PhaseNum.three);
+                break;
+            }
 
             parent = classes.get(parent.getParentName().getName());
             HashMap<String, SymbolTableItem> items = classesSymbolTable.get(parent.getName().getName()).getItems();
@@ -65,7 +77,7 @@ public class Program {
                                 Program.addError(
                                     "line:" + var.getLineNum() +
                                             ":Redefinition of variable " + name
-                                );
+                                    , PhaseNum.two);
                                 break;
                             }
                         }
@@ -78,7 +90,7 @@ public class Program {
                                 Program.addError(
                                     "line:" + method.getLineNum() +
                                             ":Redefinition of method " + name
-                                );
+                                    , PhaseNum.two);
                                 break;
                             }
                         }
@@ -88,7 +100,9 @@ public class Program {
         }
     }
 
-    public void printErrors(){
+    public void printErrors(PhaseNum phaseNum){
+        ArrayList<String> errors = (phaseNum == PhaseNum.two) ? errorsPhase2 : errorsPhase3;
+        errors.sort((e1, e2) -> (new Integer(e1.split(":")[1]).compareTo(new Integer(e2.split(":")[1]))));
         for(String error : errors)
             System.out.println(error);
     }
@@ -115,7 +129,25 @@ public class Program {
     }
 
     public void addClass(ClassDeclaration classDeclaration) {
-        classes.put(classDeclaration.getName().getName(), classDeclaration);
+        String className = classDeclaration.getName().getName();
+        if(classes.containsKey(className)){
+            Program.invalidate();
+
+            Program.addError(
+                "line:" + classDeclaration.getLineNum() +
+                        ":Redefinition of class " + className
+                    , PhaseNum.two);
+            className = "temp" + Program.getNewTempVar() +
+                    "-" + className;
+
+        }
+        classes.put(className, classDeclaration);
+    }
+
+    public static ClassDeclaration getClass(String name) throws NotFound {
+        if(!classes.containsKey(name))
+            throw new NotFound();
+        return classes.get(name);
     }
 
     public ArrayList<ClassDeclaration> getClasses() {

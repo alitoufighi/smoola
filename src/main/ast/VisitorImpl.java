@@ -390,7 +390,18 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(Conditional conditional) {
         Program.addMessage(conditional.toString());
-		conditional.getExpression().accept(this);
+		Expression condition = conditional.getExpression();
+        if(condition instanceof BinaryExpression){
+            if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())) Program.addError(
+                    "line:" + conditional.getLineNum() + ":condition type must be boolean"
+                    , PhaseNum.three);
+        }
+        else if(!(condition instanceof BooleanValue)) Program.addError(
+                "line:" + conditional.getLineNum() + ":condition type must be boolean"
+                , PhaseNum.three
+        );
+        /* TODO: if has errors, change type of condition? */
+        condition.accept(this);
         conditional.getConsequenceBody().accept(this);
         if(conditional.hasAlternativeBody())
            conditional.getAlternativeBody().accept(this);
@@ -399,20 +410,17 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(While loop) {
         Program.addMessage(loop.toString());
-        Expression condition =  loop.getCondition();
+        Expression condition = loop.getCondition();
         if(condition instanceof BinaryExpression){
-           if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())){
-               Program.addError(
-                       "line:" + loop.getLineNum() + ":condition type must be boolean"
-                       , PhaseNum.three);
-           }
+           if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())) Program.addError(
+                   "line:" + loop.getLineNum() + ":condition type must be boolean"
+                   , PhaseNum.three);
         }
-        else if(!(condition instanceof BooleanValue)){
-            Program.addError(
-                    "line:" + loop.getLineNum() + ":condition type must be boolean"
-                    , PhaseNum.three
-            );
-        }
+        else if(!(condition instanceof BooleanValue)) Program.addError(
+                "line:" + loop.getLineNum() + ":condition type must be boolean"
+                , PhaseNum.three
+        );
+        //TODO: if has errors, change type of condition?
         condition.accept(this);
 		loop.getBody().accept(this);
     }

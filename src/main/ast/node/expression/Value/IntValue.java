@@ -6,9 +6,10 @@ import ast.Visitor;
 public class IntValue extends Value {
     private int constant;
 
-    public IntValue(int constant, Type type) {
+    public IntValue(int constant, Type type, int lineNum) {
         this.constant = constant;
         this.type = type;
+        this.lineNum = lineNum;
     }
 
     public int getConstant() {

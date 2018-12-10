@@ -1,5 +1,6 @@
 package ast;
 
+import ast.Type.Type;
 import ast.Type.UserDefinedType.UserDefinedType;
 import ast.node.PhaseNum;
 import ast.node.Program;
@@ -11,8 +12,6 @@ import ast.node.expression.Value.BooleanValue;
 import ast.node.expression.Value.IntValue;
 import ast.node.expression.Value.StringValue;
 import ast.node.statement.*;
-import ast.Type.Type;
-import org.omg.CosNaming.NamingContextPackage.NotFound;
 import symbolTable.*;
 
 import java.util.ArrayList;
@@ -170,7 +169,7 @@ public class VisitorImpl implements Visitor {
             String className = ((UserDefinedType)varType).getName().getName();
             try{
                 ((UserDefinedType) varType).setClassDeclaration(Program.getClass(className));
-            } catch (NotFound e){
+            } catch (Exception e){
                 Program.invalidate();
                 Program.addError(
                         "line:" + ((UserDefinedType) varType).getName().getLineNum() +
@@ -265,7 +264,7 @@ public class VisitorImpl implements Visitor {
             try{
                 Program.getClass(className);
 
-            } catch (NotFound e){
+            } catch (Exception e){
                 Program.invalidate();
 
                 Program.addError(
@@ -288,7 +287,7 @@ public class VisitorImpl implements Visitor {
                         try{
                             Program.getClass(className);
 
-                        } catch (NotFound e){
+                        } catch (Exception e){
                             Program.invalidate();
 
                             Program.addError(
@@ -393,13 +392,28 @@ public class VisitorImpl implements Visitor {
         Program.addMessage(conditional.toString());
 		conditional.getExpression().accept(this);
         conditional.getConsequenceBody().accept(this);
-        conditional.getAlternativeBody().accept(this);
+        if(conditional.hasAlternativeBody())
+           conditional.getAlternativeBody().accept(this);
     }
 
     @Override
     public void visit(While loop) {
         Program.addMessage(loop.toString());
-		loop.getCondition().accept(this);
+        Expression condition =  loop.getCondition();
+        if(condition instanceof BinaryExpression){
+           if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())){
+               Program.addError(
+                       "line:" + loop.getLineNum() + ":condition type must be boolean"
+                       , PhaseNum.three);
+           }
+        }
+        else if(!(condition instanceof BooleanValue)){
+            Program.addError(
+                    "line:" + loop.getLineNum() + ":condition type must be boolean"
+                    , PhaseNum.three
+            );
+        }
+        condition.accept(this);
 		loop.getBody().accept(this);
     }
 

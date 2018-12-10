@@ -6,12 +6,13 @@ public class BinaryExpression extends Expression {
 
     private Expression left;
     private Expression right;
-    private BinaryOperator binaryOperator;
+    private BinaryOperator.OperatorTypes binaryOperator;
 
-    public BinaryExpression(Expression left, Expression right, BinaryOperator binaryOperator) {
+    public BinaryExpression(Expression left, Expression right, BinaryOperator.OperatorTypes binaryOperator) {
         this.left = left;
         this.right = right;
         this.binaryOperator = binaryOperator;
+        this.lineNum = left.getLineNum();
     }
 
     public Expression getLeft() {
@@ -30,11 +31,11 @@ public class BinaryExpression extends Expression {
         this.right = right;
     }
 
-    public BinaryOperator getBinaryOperator() {
+    public BinaryOperator.OperatorTypes getBinaryOperator() {
         return binaryOperator;
     }
 
-    public void setBinaryOperator(BinaryOperator binaryOperator) {
+    public void setBinaryOperator(BinaryOperator.OperatorTypes binaryOperator) {
         this.binaryOperator = binaryOperator;
     }
 

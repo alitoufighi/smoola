@@ -1,6 +1,5 @@
 package ast.node.expression;
 
-import ast.Type.Type;
 import ast.Visitor;
 
 import java.util.ArrayList;
@@ -13,6 +12,7 @@ public class MethodCall extends Expression {
     public MethodCall(Expression instance, Identifier methodName) {
         this.instance = instance;
         this.methodName = methodName;
+        this.lineNum = instance.getLineNum();
     }
 
     public Expression getInstance() {

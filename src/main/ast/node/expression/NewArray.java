@@ -11,6 +11,7 @@ public class NewArray extends Expression {
 
     public void setExpression(Expression expression) {
         this.expression = expression;
+        this.lineNum = expression.getLineNum();
     }
 
     @Override

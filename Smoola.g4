@@ -19,6 +19,7 @@ grammar Smoola;
     import ast.node.Program;
     import symbolTable.SymbolTable;
     import ast.node.PhaseNum;
+    import ast.node.expression.BinaryOperator.OperatorTypes;
 }
 
     program:
@@ -30,7 +31,7 @@ grammar Smoola;
             if(program.isValid())
                 program.printMessages();
             else
-                program.printErrors(PhaseNum.two);
+                program.printErrors(PhaseNum.three);
         }
     ;
 
@@ -172,7 +173,7 @@ grammar Smoola;
         exp = expression ';'
         {
             if ($exp.exp instanceof BinaryExpression) {
-                if (((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.assign)
+                if (((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.OperatorTypes.assign)
                     $assign = new Assign(((BinaryExpression)$exp.exp).getLeft(), ((BinaryExpression)$exp.exp).getRight());
             }
             else
@@ -187,7 +188,7 @@ grammar Smoola;
 
     expressionAssignment returns [Expression exp]:
 		(lvalue = expressionOr) '=' (rvalue = expressionAssignment)
-		{ $exp = new BinaryExpression($lvalue.exp, $rvalue.exp, BinaryOperator.assign); }
+		{ $exp = new BinaryExpression($lvalue.exp, $rvalue.exp, BinaryOperator.OperatorTypes.assign); }
 	    |
 	    or = expressionOr { $exp = $or.exp; }
 	;
@@ -200,11 +201,10 @@ grammar Smoola;
     expressionOrTemp[Expression lvalue] returns [Expression exp]:
 		'||'
 		rvalue = expressionAnd
-		{ BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, BinaryOperator.or); }
+		{ BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, BinaryOperator.OperatorTypes.or); }
 		rv = expressionOrTemp[tmp]
 		{ $exp = $rv.exp; }
 	    | { $exp = lvalue; }
-
 	;
 
     expressionAnd returns [Expression exp]:
@@ -215,7 +215,7 @@ grammar Smoola;
     expressionAndTemp[Expression lvalue] returns [Expression exp]:
 		'&&'
 		rvalue = expressionEq
-		{ BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, BinaryOperator.and); }
+		{ BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, BinaryOperator.OperatorTypes.and); }
 		rv = expressionAndTemp[tmp]
 		{ $exp = $rv.exp; }
 	    | { $exp = lvalue; }
@@ -227,8 +227,8 @@ grammar Smoola;
 	;
 
     expressionEqTemp[Expression lvalue] returns [Expression exp]:
-        { BinaryOperator operatorType; }
-		('==' { operatorType = BinaryOperator.eq; } | '<>' { operatorType = BinaryOperator.neq; })
+        { BinaryOperator.OperatorTypes operatorType; }
+		('==' { operatorType = BinaryOperator.OperatorTypes.eq; } | '<>' { operatorType = BinaryOperator.OperatorTypes.neq; })
 		rvalue = expressionCmp { BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, operatorType); }
 		rv = expressionEqTemp[tmp] { $exp = $rv.exp; }
 	    | { $exp = lvalue; }
@@ -240,8 +240,8 @@ grammar Smoola;
 	;
 
     expressionCmpTemp[Expression lvalue] returns [Expression exp]:
-        { BinaryOperator operatorType; }
-		('<' { operatorType = BinaryOperator.lt; } | '>' { operatorType = BinaryOperator.gt; })
+        { BinaryOperator.OperatorTypes operatorType; }
+		('<' { operatorType = BinaryOperator.OperatorTypes.lt; } | '>' { operatorType = BinaryOperator.OperatorTypes.gt; })
 		rvalue = expressionAdd
 		{ BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, operatorType); }
 		rv = expressionCmpTemp[tmp]
@@ -255,8 +255,8 @@ grammar Smoola;
 	;
 
     expressionAddTemp[Expression lvalue] returns [Expression exp]:
-		{ BinaryOperator operatorType; }
-		('+' { operatorType = BinaryOperator.add; } | '-' { operatorType = BinaryOperator.sub; })
+		{ BinaryOperator.OperatorTypes operatorType; }
+		('+' { operatorType = BinaryOperator.OperatorTypes.add; } | '-' { operatorType = BinaryOperator.OperatorTypes.sub; })
 		rvalue = expressionMult { BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, operatorType); }
 		rv = expressionAddTemp[tmp] { $exp = $rv.exp; }
 	    | { $exp = lvalue; }
@@ -268,8 +268,8 @@ grammar Smoola;
 	    ;
 
     expressionMultTemp[Expression lvalue] returns [Expression exp]:
-        { BinaryOperator operatorType; }
-		('*' { operatorType = BinaryOperator.mult; } | '/' { operatorType = BinaryOperator.div; })
+        { BinaryOperator.OperatorTypes operatorType; }
+		('*' { operatorType = BinaryOperator.OperatorTypes.mult; } | '/' { operatorType = BinaryOperator.OperatorTypes.div; })
 		rvalue = expressionUnary
 		{ BinaryExpression tmp = new BinaryExpression(lvalue, $rvalue.exp, operatorType); }
 		rv = expressionMultTemp[tmp]
@@ -317,18 +317,18 @@ grammar Smoola;
 	;
 
     expressionOther returns [Expression exp]:
-		num = CONST_NUM { $exp = new IntValue(Integer.parseInt($num.getText()), new IntType()); }
-        |	str = CONST_STR { $exp = new StringValue($str.getText(), new StringType()); }
+		num = CONST_NUM { $exp = new IntValue(Integer.parseInt($num.getText()), new IntType(), $num.getLine()); }
+        |	str = CONST_STR { $exp = new StringValue($str.getText(), new StringType(), $str.getLine()); }
         |   'new ' 'int' '[' size = CONST_NUM ']'
             {
                 $exp = new NewArray();
                 $exp.setLineNum($size.getLine());
-                ((NewArray)$exp).setExpression(new IntValue(Integer.parseInt($size.getText()), new IntType()));
+                ((NewArray)$exp).setExpression(new IntValue(Integer.parseInt($size.getText()), new IntType(), $size.getLine()));
             }
         |   'new ' name = ID '(' ')' { $exp = new NewClass(new Identifier($name.getText(), $name.getLine())); } // set classdeclaration in symbol table
-        |   'this' { $exp = new This(); }
-        |   'true' { $exp = new BooleanValue(true, new BooleanType()); }
-        |   'false' { $exp = new BooleanValue(false, new BooleanType()); }
+        |   e = 'this' { $exp = new This($e.getLine()); }
+        |   e = 'true' { $exp = new BooleanValue(true, new BooleanType(), $e.getLine()); }
+        |   e = 'false' { $exp = new BooleanValue(false, new BooleanType(), $e.getLine()); }
         |	name = ID { $exp = new Identifier($name.getText(), $name.getLine()); }
         |   name = ID '[' index = expression ']'
             { $exp = new ArrayCall(new Identifier($name.getText(), $name.getLine()), $index.exp); }

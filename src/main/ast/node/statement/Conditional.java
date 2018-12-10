@@ -11,7 +11,11 @@ public class Conditional extends Statement {
     public Conditional(Expression expression, Statement consequenceBody) {
         this.expression = expression;
         this.consequenceBody = consequenceBody;
+        this.alternativeBody = null;
+        this.lineNum = expression.getLineNum();
     }
+
+    public boolean hasAlternativeBody() { return alternativeBody != null; }
 
     public Expression getExpression() {
         return expression;

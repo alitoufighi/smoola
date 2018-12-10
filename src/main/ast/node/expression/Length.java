@@ -7,6 +7,7 @@ public class Length extends Expression {
 
     public Length(Expression expression) {
         this.expression = expression;
+        this.lineNum = expression.getLineNum();
     }
 
     public Expression getExpression() {

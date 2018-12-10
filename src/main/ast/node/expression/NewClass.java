@@ -7,6 +7,7 @@ public class NewClass extends Expression {
 
     public NewClass(Identifier className) {
         this.className = className;
+        this.lineNum = className.getLineNum();
     }
 
     public Identifier getClassName() {

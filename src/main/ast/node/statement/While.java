@@ -10,6 +10,7 @@ public class While extends Statement {
     public While(Expression condition, Statement body) {
         this.condition = condition;
         this.body = body;
+        this.lineNum = condition.getLineNum();
     }
 
     public Expression getCondition() {

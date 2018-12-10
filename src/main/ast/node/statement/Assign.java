@@ -10,6 +10,7 @@ public class Assign extends Statement {
     public Assign(Expression lValue, Expression rValue) {
         this.lValue = lValue;
         this.rValue = rValue;
+        this.lineNum = lValue.getLineNum();
     }
 
     public Expression getlValue() {

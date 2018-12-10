@@ -1,16 +1,14 @@
 package ast.node;
 
 import ast.Visitor;
-
-import java.util.*;
-
 import ast.node.declaration.ClassDeclaration;
 import ast.node.declaration.MethodDeclaration;
 import ast.node.declaration.VarDeclaration;
-import org.omg.CosNaming.NamingContextPackage.NotFound;
+import symbolTable.ItemAlreadyExistsException;
 import symbolTable.SymbolTable;
 import symbolTable.SymbolTableItem;
-import symbolTable.ItemAlreadyExistsException;
+
+import java.util.*;
 
 
 public class Program {
@@ -23,8 +21,6 @@ public class Program {
     private static ArrayList<String> errorsPhase2 = new ArrayList<>();
     private static ArrayList<String> errorsPhase3 = new ArrayList<>();
     private static HashMap<String, SymbolTable> classesSymbolTable = new HashMap<>();
-
-//    public SymbolTable getSymbolTable(String className) { return classesSymbolTable.get(className); }
 
     public static SymbolTable getClassSymbolTable(String className){
         return classesSymbolTable.get(className);
@@ -39,6 +35,7 @@ public class Program {
     }
 
     public static void addError(String error, PhaseNum phaseNum){
+        Program.invalidate();
         ArrayList<String> errors = (phaseNum == PhaseNum.two) ? errorsPhase2 : errorsPhase3;
         if(!errors.contains(error))
             errors.add(error);
@@ -102,7 +99,7 @@ public class Program {
 
     public void printErrors(PhaseNum phaseNum){
         ArrayList<String> errors = (phaseNum == PhaseNum.two) ? errorsPhase2 : errorsPhase3;
-        errors.sort((e1, e2) -> (new Integer(e1.split(":")[1]).compareTo(new Integer(e2.split(":")[1]))));
+        errors.sort(Comparator.comparing(e -> Integer.valueOf(e.split(":")[1])));
         for(String error : errors)
             System.out.println(error);
     }
@@ -144,9 +141,9 @@ public class Program {
         classes.put(className, classDeclaration);
     }
 
-    public static ClassDeclaration getClass(String name) throws NotFound {
+    public static ClassDeclaration getClass(String name) throws Exception {
         if(!classes.containsKey(name))
-            throw new NotFound();
+            throw new Exception();
         return classes.get(name);
     }
 

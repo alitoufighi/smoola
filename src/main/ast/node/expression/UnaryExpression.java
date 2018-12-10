@@ -10,6 +10,7 @@ public class UnaryExpression extends Expression {
     public UnaryExpression(UnaryOperator unaryOperator, Expression value) {
         this.unaryOperator = unaryOperator;
         this.value = value;
+        this.lineNum = value.getLineNum();
     }
 
     public Expression getValue() {

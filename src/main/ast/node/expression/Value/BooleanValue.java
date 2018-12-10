@@ -6,9 +6,10 @@ import ast.Visitor;
 public class BooleanValue extends Value {
     private boolean constant;
 
-    public BooleanValue(boolean constant, Type type) {
+    public BooleanValue(boolean constant, Type type, int lineNum) {
         this.constant = constant;
         this.type = type;
+        this.lineNum = lineNum;
     }
 
     public boolean isConstant() {

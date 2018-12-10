@@ -8,6 +8,7 @@ public class Write extends Statement {
 
     public Write(Expression arg) {
         this.arg = arg;
+        this.lineNum = arg.getLineNum();
     }
 
     public Expression getArg() {

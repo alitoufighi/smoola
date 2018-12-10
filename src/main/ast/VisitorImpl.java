@@ -296,7 +296,6 @@ public class VisitorImpl implements Visitor {
                                             " in class " + className
                                     , PhaseNum.three);
                         }
-//                        String className = ((NewClass) instance).getClassName().getName();
                     }
 
                 }
@@ -379,12 +378,9 @@ public class VisitorImpl implements Visitor {
     public void visit(Block block) {
         Program.addMessage(block.toString());
 
-//		SymbolTable.push(new SymbolTable(SymbolTable.top));
-
 		for(Statement stm : block.getBody())
 			stm.accept(this);
 
-//		SymbolTable.pop();
     }
 
     @Override

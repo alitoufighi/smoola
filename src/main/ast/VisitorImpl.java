@@ -170,7 +170,6 @@ public class VisitorImpl implements Visitor {
             try{
                 ((UserDefinedType) varType).setClassDeclaration(Program.getClass(className));
             } catch (Exception e){
-                Program.invalidate();
                 Program.addError(
                         "line:" + ((UserDefinedType) varType).getName().getLineNum() +
                                 ":class " + className + " is not declared"
@@ -190,6 +189,7 @@ public class VisitorImpl implements Visitor {
 
             // if we're in accepting a local variable of a method,
             // we should try to put it in symbol table
+            //TODO: Shadow when first we are declaring variable in method
             if(visitType == VarVisitType.InMethod)
                 putVariableItemToTopSymbolTable(varDeclaration, name);
 
@@ -247,62 +247,66 @@ public class VisitorImpl implements Visitor {
     	length.getExpression().accept(this);
     }
 
+    private boolean isMethodInClass(ClassDeclaration classDeclaration, String methodName){
+        for(MethodDeclaration method : classDeclaration.getMethodDeclarations())
+            if (method.getName().getName().equals(methodName))
+                return true;
+        return false;
+    }
+
     @Override
     public void visit(MethodCall methodCall) {
     	Program.addMessage(methodCall.toString());
 
-        // 5. in phase 3:
-        // a.b()
-        // a is instance, b is method name
-        // if instance instanceof NewClass, when creating a new object
-        // if instance identifiere, bayad bbinim typesh chie!
-        // if instance methodCalle, returnType?!
         String methodName = methodCall.getMethodName().getName();
         Expression instance = methodCall.getInstance();
+        methodCall.getInstance().accept(this); // to fill return types from first
+
         if(instance instanceof NewClass){
             String className = ((NewClass) instance).getClassName().getName();
-            try{
-                Program.getClass(className);
-
+            try {
+                ClassDeclaration classDeclaration = Program.getClass(className);
+                if (isMethodInClass(classDeclaration, methodName))
+                    methodCall.setReturnType(classDeclaration.getMethodReturnType(methodName));
+                else Program.addError(
+                        "line:" + ((NewClass) instance).getClassName().getLineNum() +
+                                ":there is no method named " + methodName +
+                                " in class " + className
+                        , PhaseNum.three);
             } catch (Exception e){
-                Program.invalidate();
-
                 Program.addError(
-                "line:" + ((NewClass) instance).getClassName().getLineNum() +
-                        ":there is no method named " + methodName +
-                        " in class " + className
-                , PhaseNum.three);
+                    "line:" + methodCall.getLineNum() +
+                            ":class " + className + " is not declared"
+                        , PhaseNum.three);
             }
         }
         else if(instance instanceof Identifier){
             String instanceVarName = ((Identifier) instance).getName(); // variable of instance
-
             try{
                 SymbolTableItem item = SymbolTable.top.get(instanceVarName.concat("@var")); //this may raise exception
-
                 if(item instanceof SymbolTableVariableItem){
                     Type instanceType = ((SymbolTableVariableItem) item).getType();
                     if(instanceType instanceof UserDefinedType){
                         String className = ((UserDefinedType) instanceType).getName().getName();
-                        try{
-                            Program.getClass(className);
-
-                        } catch (Exception e){
-                            Program.invalidate();
-
-                            Program.addError(
+                        try {
+                            ClassDeclaration classDeclaration = Program.getClass(className);
+                            if (isMethodInClass(classDeclaration, methodName)){
+                                methodCall.setReturnType(classDeclaration.getMethodReturnType(methodName));
+                            }
+                            else Program.addError(
                                     "line:" + instance.getLineNum() +
                                             ":there is no method named " + methodName +
                                             " in class " + className
                                     , PhaseNum.three);
+                        } catch (Exception e){
+                            Program.addError(
+                                    "line:" + methodCall.getLineNum() +
+                                            ":class " + className + " is not declared"
+                                    , PhaseNum.three);
                         }
                     }
-
                 }
-
             } catch (ItemNotFoundException e){
-                Program.invalidate();
-
                 Program.addError(
                         "line:" + methodCall.getMethodName().getLineNum() +
                                 ":variable " + instanceVarName +
@@ -310,8 +314,45 @@ public class VisitorImpl implements Visitor {
                         , PhaseNum.three);
             }
         }
+        else if(instance instanceof MethodCall){
+            String instanceTypeName = ((MethodCall) instance).getReturnType().toString();
+            if(Program.isPrimitiveType(instanceTypeName)){
+                Program.addError(
+                        "line:"+instance.getLineNum()+":methods are not allowed on "+instanceTypeName,
+                        PhaseNum.three
+                );
+            } else {
+                try {
+                    ClassDeclaration instanceClass = Program.getClass(instanceTypeName);
+                    try {
+                        Type returnType = instanceClass.getMethodReturnType(methodName);
+                        methodCall.setReturnType(returnType);
+                    }
+                    catch (Exception e){
+                        Program.addError(
+                                "line:" + instance.getLineNum() +
+                                        ":there is no method named " + methodName +
+                                        " in class " + instanceTypeName,
+                                PhaseNum.three
+                        );
+                        //TODO: NOTYPE?!
+                        //methodCall.setReturnType(NoType);
+                    }
+                    ClassDeclaration classDeclaration = Program.getClass(instanceTypeName);
+                    if (!isMethodInClass(classDeclaration, methodName)){
+                        Program.addError(
+                                "line:" + instance.getLineNum() +
+                                        ":there is no method named " + methodName +
+                                        " in class " + instanceTypeName,
+                                PhaseNum.three
+                        );
+                    }
+                } catch (Exception e){
+                    // It's handled in visiting MethodDeclaration
+                }
+            }
+        }
 
-        methodCall.getInstance().accept(this);
         methodCall.getMethodName().accept(this);
 		for(Expression arg : methodCall.getArgs())
 			arg.accept(this);

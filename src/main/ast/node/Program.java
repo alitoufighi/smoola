@@ -34,6 +34,10 @@ public class Program {
         messages.add(msg);
     }
 
+    public static boolean isPrimitiveType(String typeName){
+        return typeName.equals("int") || typeName.equals("int[]") || typeName.equals("string") || typeName.equals("boolean");
+    }
+
     public static void addError(String error, PhaseNum phaseNum){
         Program.invalidate();
         ArrayList<String> errors = (phaseNum == PhaseNum.two) ? errorsPhase2 : errorsPhase3;

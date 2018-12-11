@@ -1,5 +1,6 @@
 package ast.node.declaration;
 
+import ast.Type.Type;
 import ast.Visitor;
 import ast.node.expression.Identifier;
 
@@ -15,6 +16,13 @@ public class ClassDeclaration extends Declaration{
         this.name = name;
         this.parentName = parentName;
         this.lineNum = name.getLineNum();
+    }
+
+    public Type getMethodReturnType(String methodName) throws Exception{
+        for(MethodDeclaration methodDeclaration : methodDeclarations)
+            if (methodDeclaration.getName().getName().equals(methodName))
+                return methodDeclaration.getReturnType();
+        throw new Exception();
     }
 
     public Identifier getName() {

@@ -10,6 +10,8 @@ public class NewClass extends Expression {
         this.lineNum = className.getLineNum();
     }
 
+    public Identifier getName() { return className; }
+
     public Identifier getClassName() {
         return className;
     }

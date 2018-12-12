@@ -4,30 +4,41 @@ class Main {
     }
 }
 
-class Test{
+class Test extends m {
     var y : int[];
     def test() : int {
         var m : m;
+        temp = 10;
         m = new m();
-        y[x] = 2;
+        y[1] = 2;
         a = m.n().length;
         return 0;
     }
 }
 
-class m {
+class m extends n {
+    var temp1 : int;
     def f() : int {
+        var x : int;
+        var y: boolean;
+        x = 10;
+        x = !y;
         return this.a()[1];
     }
     def a() : int[]{
-        return new int[2];
+        var rv : int[];
+        var classvar : MyClass;
+        classvar = new MyClass();
+        rv = new int[5];
+        return rv;
     }
 }
 
 class n {
-   def g() : p {
-       return 0;
-   }
+    var temp1 : int;
+    def g() : p {
+        return 0;
+    }
 }
 
 class p {

@@ -51,6 +51,21 @@ public class Program {
             errors.add(error);
     }
 
+    public void createClassSymbolTableHierarchy() {
+        for (HashMap.Entry<String, SymbolTable> classTable : classesSymbolTable.entrySet()) {
+			ClassDeclaration c;
+        	try {
+        		c = classes.get(classTable.getKey());
+        		if (c.hasParent())
+					classTable.getValue().setPre(classesSymbolTable.get(
+							classes.get(classTable.getKey()).getParentName().getName()));
+
+			} catch(Exception e) {
+        		return;
+			}
+		}
+    }
+
     public static void addSymbolTableItems(SymbolTable symbolTable, ClassDeclaration current){
         ClassDeclaration parent = current;
 

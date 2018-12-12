@@ -35,8 +35,11 @@ public class VisitorImpl implements Visitor {
 		for (ClassDeclaration classDeclaration : program.getClasses())
             classDeclaration.accept(this);
 
-        for (ClassDeclaration c : program.getClasses())
-            Program.addSymbolTableItems(Program.getClassSymbolTable(c.getName().getName()), c);
+		program.createClassSymbolTableHierarchy();
+
+        for (ClassDeclaration classDeclaration : program.getClasses())
+            Program.addSymbolTableItems(Program.getClassSymbolTable(classDeclaration.getName().getName()),
+					classDeclaration);
 
         Program.passNum = 2;
 
@@ -77,7 +80,7 @@ public class VisitorImpl implements Visitor {
 
             SymbolTable.push(new SymbolTable(SymbolTable.top));
 
-            for(VarDeclaration vdec : classDeclaration.getVarDeclarations())
+			for(VarDeclaration vdec : classDeclaration.getVarDeclarations())
                 vdec.accept(this, VarVisitType.InClass);
             for(MethodDeclaration mdec : classDeclaration.getMethodDeclarations())
                 mdec.accept(this);
@@ -327,6 +330,7 @@ public class VisitorImpl implements Visitor {
                 try{
                     SymbolTable.top.get(identifier.getName()+"@class");
                 } catch (ItemNotFoundException e2){
+                    System.out.println("HERE "+identifier.getName());
                     identifier.setType(new NoType());
                     Program.addError(
                             "line:"+identifier.getLineNum()+":variable "+identifier.getName()+

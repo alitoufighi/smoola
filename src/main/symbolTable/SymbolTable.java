@@ -49,8 +49,10 @@ public class SymbolTable {
 	public SymbolTable(SymbolTable st){
 		this.pre = st;
         this.items = new HashMap<>();
-        for(Map.Entry<String, SymbolTableItem> entry : st.items.entrySet())
-            items.put(entry.getKey(), entry.getValue());
+
+        /// TODO: delete it if it was not necessary
+//        for(Map.Entry<String, SymbolTableItem> entry : st.items.entrySet())
+//            items.put(entry.getKey(), entry.getValue());
 	}
 
 	// used in pass 1
@@ -67,10 +69,9 @@ public class SymbolTable {
 		return items.get(0).getName();
 	}
 
-//	public SymbolTable(SymbolTable pre) {
-//		this.pre = pre;
-//		this.items = new HashMap<String, SymbolTableItem>();
-//	}
+	public void setPre(SymbolTable pre) {
+		this.pre = pre;
+	}
 
 	public void put(SymbolTableItem item) throws ItemAlreadyExistsException {
 		if(items.containsKey(item.getKey()))

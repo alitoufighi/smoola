@@ -25,9 +25,6 @@ grammar Smoola;
     program returns [Program p]:
         { $p = new Program(); }
         y = mainClass { $p.setMainClass($y.c); } ( x = classDeclaration { $p.addClass($x.c); } )* EOF
-        {
-
-        }
     ;
 
     mainClass returns [ClassDeclaration c]:

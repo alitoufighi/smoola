@@ -5,18 +5,22 @@ class Main {
 }
 
 class Test{
-    var y : m;
+    var y : int[];
     def test() : int {
-        var y : int;
-        var y : string;
-        x = new m().f().g().y();
+        var m : m;
+        m = new m();
+        y[x] = 2;
+        a = m.n().length;
         return 0;
     }
 }
 
 class m {
-    def f() : n {
-        return new n();
+    def f() : int {
+        return this.a()[1];
+    }
+    def a() : int[]{
+        return new int[2];
     }
 }
 

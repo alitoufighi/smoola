@@ -26,6 +26,7 @@ public class Program {
     private static ArrayList<String> errorsPhase2 = new ArrayList<>();
     private static ArrayList<String> errorsPhase3 = new ArrayList<>();
     private static HashMap<String, SymbolTable> classesSymbolTable = new HashMap<>();
+    public static String currentClass;
 
     public static SymbolTable getClassSymbolTable(String className){
         return classesSymbolTable.get(className);

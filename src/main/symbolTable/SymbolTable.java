@@ -47,7 +47,7 @@ public class SymbolTable {
 
 	// this is a copy constructor
 	public SymbolTable(SymbolTable st){
-		this.pre = st.pre;
+		this.pre = st;
         this.items = new HashMap<>();
         for(Map.Entry<String, SymbolTableItem> entry : st.items.entrySet())
             items.put(entry.getKey(), entry.getValue());
@@ -83,6 +83,8 @@ public class SymbolTable {
 	}
 
 	public SymbolTableItem get(String key) throws ItemNotFoundException {
+//		System.out.println("Getting "+key);
+//		System.out.println(Program.getClassSymbolTable("Main"));
 		SymbolTableItem value = items.get(key);
 		if(value == null && pre != null)
 			return pre.get(key);

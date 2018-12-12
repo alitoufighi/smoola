@@ -2,6 +2,8 @@ package ast;
 
 import ast.Type.ArrayType.ArrayType;
 import ast.Type.NoType;
+import ast.Type.PrimitiveType.BooleanType;
+import ast.Type.PrimitiveType.IntType;
 import ast.Type.Type;
 import ast.Type.UserDefinedType.UserDefinedType;
 import ast.node.PhaseNum;
@@ -232,7 +234,7 @@ public class VisitorImpl implements Visitor {
         // instance must be array type
         instance.accept(this);
         if(!(instance.getType() instanceof ArrayType)){
-            System.out.println("Here " + instance.getType());
+//            System.out.println("Here " + instance.getType());
             //TODO: Is message below right for this error?
             Program.addError(
                     "line:"+arrayCall.getLineNum()+":unsupported operand type for "+instance.getType(),
@@ -240,11 +242,11 @@ public class VisitorImpl implements Visitor {
             );
             instance.setType(new NoType()); //TODO: right?
         }
-        System.out.println(instance.getType());
+//        System.out.println(instance.getType());
         Expression index = arrayCall.getIndex();
         index.accept(this);
         if(!(index instanceof IntValue || index.getType() instanceof NoType)){
-            System.out.println(index.getType());
+//            System.out.println(index.getType());
             Program.addError(
                     "line:"+arrayCall.getLineNum()+":unsupported operand type for "+index.getType(),
                     PhaseNum.three
@@ -261,6 +263,51 @@ public class VisitorImpl implements Visitor {
     	//TODO: Check rvalue and lvalue for left and right operands
     	Expression right = binaryExpression.getRight();
     	right.accept(this);
+    	BinaryOperator.OperatorTypes operator = binaryExpression.getBinaryOperator();
+    	if(operator.equals(BinaryOperator.OperatorTypes.assign)){
+    	    if(isCompatibleForAssignment(left, right))
+                binaryExpression.setType(left.getType());
+    	    else
+    	        binaryExpression.setType(new NoType());
+        } else {
+    	    if(operator.equals(BinaryOperator.OperatorTypes.eq) || operator.equals(BinaryOperator.OperatorTypes.neq)){
+    	        if(Program.isPrimitiveType(left.getType().toString()) && left.getType().toString().equals(right.getType().toString())){
+    	            binaryExpression.setType(new BooleanType());
+                } else {
+    	            Program.addError(
+    	                    "line:"+binaryExpression.getLineNum()+":unsupported operand type for " + operator.name(),
+                            PhaseNum.three
+                    );
+                }
+            } else {
+    	        if(left.getType().toString().equals("int") && right.getType().toString().equals("int")){
+    	            binaryExpression.setType(new IntType());
+                } else {
+                    Program.addError(
+                            "line:"+binaryExpression.getLineNum()+":unsupported operand type for " + operator.name(),
+                            PhaseNum.three
+                    );
+                }
+            }
+        }
+    }
+
+    private boolean isCompatibleForAssignment(Expression left, Expression right) {
+        if(Program.isPrimitiveType(left.getType().toString()) || Program.isPrimitiveType(right.getType().toString())){
+            return false;
+        }
+        try{
+            ClassDeclaration leftClass = Program.getClass(((UserDefinedType)left.getType()).getName().getName());
+            ClassDeclaration parent = Program.getClass(((UserDefinedType)right.getType()).getName().getName());
+            do {
+                if(parent.getName().getName().equals(leftClass.getName().getName()))
+                    return true;
+                parent = Program.getClass(parent.getParentName().getName());
+            } while(parent.hasParent());
+            return false;
+        } catch (Exception e){
+            return false;
+        }
     }
 
     @Override
@@ -378,7 +425,7 @@ public class VisitorImpl implements Visitor {
         else if(instance instanceof This){
             if(Program.passNum == 2){
                 String className = Program.currentClass;
-                System.out.println(className);
+//                System.out.println(className);
                 try {
                     ClassDeclaration classObj = Program.getClass(className);
                     methodCall.setType(classObj.getMethodReturnType(methodName));

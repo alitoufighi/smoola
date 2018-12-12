@@ -96,3 +96,4 @@ compilerFall97.iml
 src/main/Smoola*
 in.sml
 out/
+*.pdf

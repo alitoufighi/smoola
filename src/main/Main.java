@@ -15,9 +15,6 @@ public class Main {
 		SmoolaParser parser = new SmoolaParser(tokens);   // SmoolaParser in your project
 		Program p = parser.program().p; // program is the name of the start rule
 
-		VisitorImpl v = new VisitorImpl();
-		p.accept(v);
-
 		VisitorImpl visitor = new VisitorImpl();
 		p.accept(visitor);
 		if(p.isValid())

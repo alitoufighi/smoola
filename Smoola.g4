@@ -22,16 +22,11 @@ grammar Smoola;
     import ast.node.expression.BinaryOperator.OperatorTypes;
 }
 
-    program:
-        { Program program = new Program(); }
-        y = mainClass { program.setMainClass($y.c); } ( x = classDeclaration { program.addClass($x.c); } )* EOF
+    program returns [Program p]:
+        { $p = new Program(); }
+        y = mainClass { $p.setMainClass($y.c); } ( x = classDeclaration { $p.addClass($x.c); } )* EOF
         {
-            VisitorImpl visitor = new VisitorImpl();
-            program.accept(visitor);
-            if(program.isValid())
-                program.printMessages();
-            else
-                program.printErrors(PhaseNum.three);
+
         }
     ;
 

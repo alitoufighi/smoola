@@ -1,6 +1,8 @@
 package symbolTable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SymbolTable {
 
@@ -49,6 +51,20 @@ public class SymbolTable {
         this.items = new HashMap<>();
         for(Map.Entry<String, SymbolTableItem> entry : st.items.entrySet())
             items.put(entry.getKey(), entry.getValue());
+	}
+
+	// used in pass 1
+	public String getClassNameInClassScope() throws NotInClassScopeException {
+		ArrayList<SymbolTableItem> items = new ArrayList<>();
+
+		for(Map.Entry<String, SymbolTableItem> entry : this.items.entrySet()){
+			if(entry.getValue() instanceof SymbolTableClassItem)
+				items.add(entry.getValue());
+		}
+		if(items.size() != 1){ //TODO: CHECK
+			throw new NotInClassScopeException();
+		}
+		return items.get(0).getName();
 	}
 
 //	public SymbolTable(SymbolTable pre) {

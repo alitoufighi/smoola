@@ -1,12 +1,17 @@
 package ast.node;
 
+import ast.Type.ArrayType.ArrayType;
+import ast.Type.PrimitiveType.BooleanType;
+import ast.Type.PrimitiveType.IntType;
+import ast.Type.PrimitiveType.StringType;
+import ast.Type.Type;
+import ast.Type.UserDefinedType.UserDefinedType;
 import ast.Visitor;
 import ast.node.declaration.ClassDeclaration;
 import ast.node.declaration.MethodDeclaration;
 import ast.node.declaration.VarDeclaration;
-import symbolTable.ItemAlreadyExistsException;
-import symbolTable.SymbolTable;
-import symbolTable.SymbolTableItem;
+import ast.node.expression.Expression;
+import symbolTable.*;
 
 import java.util.*;
 
@@ -84,21 +89,36 @@ public class Program {
                         }
                     }
                     else if(type.equals("method")){
-                        for(MethodDeclaration method : current.getMethodDeclarations()) {
+                        for(MethodDeclaration method : current.getMethodDeclarations())
                             if (method.getName().getName().equals(name)) {
-                                Program.invalidate();
-
                                 Program.addError(
-                                    "line:" + method.getLineNum() +
-                                            ":Redefinition of method " + name
-                                    , PhaseNum.two);
+                                        "line:" + method.getLineNum() +
+                                                ":Redefinition of method " + name
+                                        , PhaseNum.two);
                                 break;
                             }
-                        }
                     }
                 }
             }
         }
+    }
+
+    public static boolean doesWritelnSupport(Expression argument) {
+        Type type = argument.getType();
+        if(type instanceof StringType || type instanceof IntType || type instanceof ArrayType)
+            return true;
+        if(type instanceof BooleanType)
+            return false;
+        System.out.println("Type is " + type);
+        try{
+            // type mitone int bashe!
+            SymbolTableItem item = SymbolTable.top.get(((UserDefinedType) type).getName().getName()+"@var");
+            System.out.println(((SymbolTableVariableItem)item).getType());
+        } catch (ItemNotFoundException e){
+            //
+        }
+        return true;
+        //todo: solve this! using symbol table? add type to symbol table item? UPDATE: DARE ASAN :)))))
     }
 
     public void printErrors(PhaseNum phaseNum){

@@ -1,6 +1,5 @@
 package ast.node.expression;
 
-import ast.Type.Type;
 import ast.Visitor;
 
 import java.util.ArrayList;
@@ -9,7 +8,7 @@ public class MethodCall extends Expression {
     private Expression instance;
     private Identifier methodName;
     private ArrayList<Expression> args = new ArrayList<>();
-    private Type returnType;
+//    private Type returnType;
 
     public MethodCall(Expression instance, Identifier methodName) {
         this.instance = instance;
@@ -17,9 +16,9 @@ public class MethodCall extends Expression {
         this.lineNum = instance.getLineNum();
     }
 
-    public void setReturnType(Type returnType){ this.returnType = returnType; }
+//    public void setReturnType(Type returnType){ this.returnType = returnType; }
 
-    public Type getReturnType() { return this.returnType; }
+//    public Type getReturnType() { return this.returnType; }
 
     public Expression getInstance() {
         return instance;

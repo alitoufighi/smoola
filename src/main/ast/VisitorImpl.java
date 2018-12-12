@@ -234,7 +234,6 @@ public class VisitorImpl implements Visitor {
         // instance must be array type
         instance.accept(this);
         if(!(instance.getType() instanceof ArrayType)){
-//            System.out.println("Here " + instance.getType());
             //TODO: Is message below right for this error?
             Program.addError(
                     "line:"+arrayCall.getLineNum()+":unsupported operand type for "+instance.getType(),
@@ -242,17 +241,16 @@ public class VisitorImpl implements Visitor {
             );
             instance.setType(new NoType()); //TODO: right?
         }
-//        System.out.println(instance.getType());
         Expression index = arrayCall.getIndex();
         index.accept(this);
         if(!(index instanceof IntValue || index.getType() instanceof NoType)){
-//            System.out.println(index.getType());
             Program.addError(
                     "line:"+arrayCall.getLineNum()+":unsupported operand type for "+index.getType(),
                     PhaseNum.three
             );
             index.setType(new NoType());
         }
+        arrayCall.setType(new IntType());
     }
 
     @Override
@@ -293,9 +291,15 @@ public class VisitorImpl implements Visitor {
     }
 
     private boolean isCompatibleForAssignment(Expression left, Expression right) {
-        if(Program.isPrimitiveType(left.getType().toString()) || Program.isPrimitiveType(right.getType().toString())){
-            return false;
-        }
+        System.out.println("ASSCOMP LINE "+left.getLineNum()+" "+left.getType()+" "+right.getType());
+
+        if ((left.getType() instanceof NoType) || (right.getType() instanceof NoType))
+            return true;
+
+        /// TODO: check the rvalue
+        if ((Program.isPrimitiveType(left.getType().toString())))
+            return left.getType().toString().equals(right.getType().toString());
+
         try{
             ClassDeclaration leftClass = Program.getClass(((UserDefinedType)left.getType()).getName().getName());
             ClassDeclaration parent = Program.getClass(((UserDefinedType)right.getType()).getName().getName());
@@ -347,6 +351,7 @@ public class VisitorImpl implements Visitor {
                     PhaseNum.three
             );
         }
+    	length.setType(new IntType());
     }
 
     private boolean isMethodInClass(ClassDeclaration classDeclaration, String methodName){
@@ -425,7 +430,6 @@ public class VisitorImpl implements Visitor {
         else if(instance instanceof This){
             if(Program.passNum == 2){
                 String className = Program.currentClass;
-//                System.out.println(className);
                 try {
                     ClassDeclaration classObj = Program.getClass(className);
                     methodCall.setType(classObj.getMethodReturnType(methodName));
@@ -492,12 +496,16 @@ public class VisitorImpl implements Visitor {
         else
             Program.addMessage(newArray.toString());
     	newArray.getExpression().accept(this);
+    	newArray.setType(new ArrayType());
     }
 
     @Override
     public void visit(NewClass newClass) {
         Program.addMessage(newClass.toString());
-		newClass.getClassName().accept(this);
+
+		Identifier className = newClass.getClassName();
+		newClass.setType(new UserDefinedType(className));
+		className.accept(this);
     }
 
     @Override
@@ -510,9 +518,21 @@ public class VisitorImpl implements Visitor {
     public void visit(UnaryExpression unaryExpression) {
         Program.addMessage(unaryExpression.toString());
 
-    	unaryExpression.getValue().accept(this);
+        Expression value = unaryExpression.getValue();
+        value.accept(this);
+        if(value.getType() instanceof IntType && unaryExpression.getUnaryOperator().equals(UnaryOperator.minus)){
+            unaryExpression.setType(value.getType());
+        } else if(value.getType() instanceof BooleanType && unaryExpression.getUnaryOperator().equals(UnaryOperator.not)) {
+            unaryExpression.setType(value.getType());
+        } else {
+            unaryExpression.setType(new NoType());
+            Program.addError(
+    	            "line:"+unaryExpression.getLineNum()+":unsupported operand type for "+unaryExpression.getUnaryOperator(),
+                    PhaseNum.three
+            );
+        }
     }
-
+//TODO: Atfe Manteqi: && ||
     @Override
     public void visit(BooleanValue value) {
         Program.addMessage(value.toString());
@@ -532,8 +552,17 @@ public class VisitorImpl implements Visitor {
     public void visit(Assign assign) {
         Program.addMessage(assign.toString());
 
-		assign.getlValue().accept(this);
-		assign.getrValue().accept(this);
+		Expression lvalue = assign.getlValue();
+		lvalue.accept(this);
+		Expression rvalue = assign.getrValue();
+		rvalue.accept(this);
+
+		System.out.println(lvalue.getType()+" "+rvalue.getType()+" "+assign.getLineNum());
+        if(!isCompatibleForAssignment(lvalue, rvalue))
+            Program.addError(
+                    "line:"+assign.getLineNum()+":unsupported operand type for "+BinaryOperator.OperatorTypes.assign,
+                    PhaseNum.three
+            );
     }
 
     @Override

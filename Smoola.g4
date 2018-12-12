@@ -271,7 +271,7 @@ grammar Smoola;
 
     expressionUnary returns [Expression exp]:
         { UnaryOperator unaryOperator; }
-		('!' { unaryOperator = UnaryOperator.not; } | '-' { unaryOperator = UnaryOperator.not; }) value = expressionUnary
+		('!' { unaryOperator = UnaryOperator.not; } | '-' { unaryOperator = UnaryOperator.minus; }) value = expressionUnary
 		{ $exp = new UnaryExpression(unaryOperator, $value.exp); }
 	    |	expMem = expressionMem
 	    { $exp = $expMem.exp; }

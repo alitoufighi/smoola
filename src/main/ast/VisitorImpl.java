@@ -28,6 +28,16 @@ public class VisitorImpl implements Visitor {
 
 		SymbolTable.push(new SymbolTable());
 
+		//Object is a class, which hasn't any parents and is declared at line 0, and is parent of all classes
+		ClassDeclaration Object = new ClassDeclaration(new Identifier("Object", 0), null);
+		program.addClass(Object);
+
+		try{
+            SymbolTable.top.put(new SymbolTableClassItem("Object"));
+        } catch (ItemAlreadyExistsException e) {
+		    // This won't happen
+        }
+
         Program.passNum = 1;
 
         program.getMainClass().accept(this);
@@ -63,8 +73,6 @@ public class VisitorImpl implements Visitor {
                 catch (ItemAlreadyExistsException e1){
                     // ?!?
                 }
-                Program.invalidate();
-
                 Program.addError(
                     "line:" + classDeclaration.getLineNum() +
                             ":Redefinition of class " + name

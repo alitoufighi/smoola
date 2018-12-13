@@ -18,6 +18,7 @@ public interface Visitor {
     void visit(ArrayCall arrayCall);
     void visit(BinaryExpression binaryExpression);
     void visit(Identifier identifier);
+    void visit(Identifier identifier, int type);
     void visit(Length length);
     void visit(MethodCall methodCall);
     void visit(NewArray newArray);

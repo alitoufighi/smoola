@@ -759,6 +759,11 @@ public class VisitorImpl implements Visitor {
     }
 
     @Override
+    public void visit(MethodCallInMain methodCallInMain) {
+        //TODO: implement appropriate visit functionality
+    }
+
+    @Override
     public void visit(While loop) {
         Program.addMessage(loop.toString());
         Expression condition = loop.getCondition();

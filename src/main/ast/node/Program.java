@@ -2,19 +2,18 @@ package ast.node;
 
 import ast.Type.ArrayType.ArrayType;
 import ast.Type.NoType;
-import ast.Type.PrimitiveType.BooleanType;
 import ast.Type.PrimitiveType.IntType;
 import ast.Type.PrimitiveType.StringType;
 import ast.Type.Type;
-import ast.Type.UserDefinedType.UserDefinedType;
 import ast.Visitor;
 import ast.node.declaration.ClassDeclaration;
-import ast.node.declaration.MethodDeclaration;
-import ast.node.declaration.VarDeclaration;
 import ast.node.expression.Expression;
-import symbolTable.*;
+import symbolTable.SymbolTable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 
 public class Program {
@@ -61,7 +60,9 @@ public class Program {
 					classTable.getValue().setPre(classesSymbolTable.get(
 							classes.get(classTable.getKey()).getParentName().getName()));
         		else{
-        		    //TODO:set pre to Object class
+        		    classTable.getValue().setPre(classesSymbolTable.get(
+        		            classes.get("Object").getName().getName()
+                    ));
                 }
 
 			} catch(Exception e) {
@@ -70,72 +71,61 @@ public class Program {
 		}
     }
 
-    public static void addSymbolTableItems(SymbolTable symbolTable, ClassDeclaration current){
-        ClassDeclaration parent = current;
-
-        while(parent.hasParent()){
-
-            if(!classes.containsKey(parent.getParentName().getName())){
-                Program.addError(
-                        "line:" + parent.getLineNum() +
-                                ":class " + parent.getParentName().getName() + " is not declared"
-                        , PhaseNum.three);
-                break;
-            }
-
-            parent = classes.get(parent.getParentName().getName());
-            HashMap<String, SymbolTableItem> items = classesSymbolTable.get(parent.getName().getName()).getItems();
-            for(Map.Entry<String, SymbolTableItem> entry : items.entrySet()){
-                try{
-                    symbolTable.put(entry.getValue());
-                }
-                catch (ItemAlreadyExistsException e){
-                    String key = entry.getKey();
-                    String[] tokens = key.split("@");
-                    String name = tokens[0];
-                    String type = tokens[1];
-                    if(type.equals("var")){
-                        for(VarDeclaration var : current.getVarDeclarations()) {
-                            if (var.getIdentifier().getName().equals(name)) {
-                                Program.invalidate();
-
-                                Program.addError(
-                                    "line:" + var.getLineNum() +
-                                            ":Redefinition of variable " + name
-                                    , PhaseNum.two);
-                                break;
-                            }
-                        }
-                    }
-                    else if(type.equals("method")){
-                        for(MethodDeclaration method : current.getMethodDeclarations())
-                            if (method.getName().getName().equals(name)) {
-                                Program.addError(
-                                        "line:" + method.getLineNum() +
-                                                ":Redefinition of method " + name
-                                        , PhaseNum.two);
-                                break;
-                            }
-                    }
-                }
-            }
-        }
-    }
+//    public static void addSymbolTableItems(SymbolTable symbolTable, ClassDeclaration current){
+//        ClassDeclaration parent = current;
+//
+//        while(parent.hasParent()){
+//
+//            if(!classes.containsKey(parent.getParentName().getName())){
+//                Program.addError(
+//                        "line:" + parent.getLineNum() +
+//                                ":class " + parent.getParentName().getName() + " is not declared"
+//                        , PhaseNum.three);
+//                break;
+//            }
+//
+//            parent = classes.get(parent.getParentName().getName());
+//            HashMap<String, SymbolTableItem> items = classesSymbolTable.get(parent.getName().getName()).getItems();
+//            for(Map.Entry<String, SymbolTableItem> entry : items.entrySet()){
+//                try{
+//                    symbolTable.put(entry.getValue());
+//                }
+//                catch (ItemAlreadyExistsException e){
+//                    String key = entry.getKey();
+//                    String[] tokens = key.split("@");
+//                    String name = tokens[0];
+//                    String type = tokens[1];
+//                    if(type.equals("var")){
+//                        for(VarDeclaration var : current.getVarDeclarations()) {
+//                            if (var.getIdentifier().getName().equals(name)) {
+//                                Program.invalidate();
+//
+//                                Program.addError(
+//                                    "line:" + var.getLineNum() +
+//                                            ":Redefinition of variable " + name
+//                                    , PhaseNum.two);
+//                                break;
+//                            }
+//                        }
+//                    }
+//                    else if(type.equals("method")){
+//                        for(MethodDeclaration method : current.getMethodDeclarations())
+//                            if (method.getName().getName().equals(name)) {
+//                                Program.addError(
+//                                        "line:" + method.getLineNum() +
+//                                                ":Redefinition of method " + name
+//                                        , PhaseNum.two);
+//                                break;
+//                            }
+//                    }
+//                }
+//            }
+//        }
+//    }
 
     public static boolean doesWritelnSupport(Expression argument) {
         Type type = argument.getType();
-        if(type instanceof StringType || type instanceof IntType || type instanceof ArrayType || type instanceof NoType)
-            return true;
-        if(type instanceof BooleanType)
-            return false;
-        try{
-            // type mitone int bashe!
-            SymbolTableItem item = SymbolTable.top.get(((UserDefinedType) type).getName().getName()+"@var");
-        } catch (ItemNotFoundException e){
-            //
-        }
-        return true;
-        //todo: solve this! using symbol table? add type to symbol table item? UPDATE: DARE ASAN :)))))
+        return type instanceof StringType || type instanceof IntType || type instanceof ArrayType || type instanceof NoType;
     }
 
     public void printErrors(PhaseNum phaseNum){

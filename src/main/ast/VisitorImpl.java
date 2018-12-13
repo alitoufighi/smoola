@@ -95,8 +95,6 @@ public class VisitorImpl implements Visitor {
                     SymbolTable.top.get(parentName.concat("@class"));
                 }
                 catch (ItemNotFoundException e){
-                    if(classDeclaration.getLineNum() == 29){
-                    }
                     Program.addError(
                         "line:" + classDeclaration.getLineNum() +
                                 ":class " + parentName + " is not declared"
@@ -437,8 +435,6 @@ public class VisitorImpl implements Visitor {
                 try{
                     SymbolTable.top.get(identifier.getName()+"@class");
                 } catch (ItemNotFoundException e2){
-                    if(identifier.getLineNum() == 60){
-                    }
                     identifier.setType(new NoType());
                     try{
                         SymbolTable.top.put(new SymbolTableVariableItem(identifier.getName(), identifier.getType()));
@@ -568,16 +564,13 @@ public class VisitorImpl implements Visitor {
         }
         else if(instance instanceof This){
             //TODO:HERE
-//            if(Program)
-//            if(Program.passNum == 2){
             String className = Program.currentClass;
             try {
                 ClassDeclaration classObj = Program.getClass(className);
                 setMethodType(methodCall, methodName, instance, className, classObj);
             } catch (Exception e) {
                 e.printStackTrace();
-                }
-//            }
+            }
         }
         else if(instance instanceof MethodCall){
             String instanceTypeName = instance.getType().toString();

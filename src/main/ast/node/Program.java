@@ -1,6 +1,7 @@
 package ast.node;
 
 import ast.Type.ArrayType.ArrayType;
+import ast.Type.NoType;
 import ast.Type.PrimitiveType.BooleanType;
 import ast.Type.PrimitiveType.IntType;
 import ast.Type.PrimitiveType.StringType;
@@ -41,7 +42,7 @@ public class Program {
     }
 
     public static boolean isPrimitiveType(String typeName){
-        return typeName.equals("int") || typeName.equals("int[]") || typeName.equals("string") || typeName.equals("boolean");
+        return typeName.equals("int") || typeName.equals("int[]") || typeName.equals("string") || typeName.equals("bool");
     }
 
     public static void addError(String error, PhaseNum phaseNum){
@@ -59,6 +60,9 @@ public class Program {
         		if (c.hasParent())
 					classTable.getValue().setPre(classesSymbolTable.get(
 							classes.get(classTable.getKey()).getParentName().getName()));
+        		else{
+        		    //TODO:set pre to Object class
+                }
 
 			} catch(Exception e) {
         		return;
@@ -72,7 +76,6 @@ public class Program {
         while(parent.hasParent()){
 
             if(!classes.containsKey(parent.getParentName().getName())){
-                Program.invalidate();
                 Program.addError(
                         "line:" + parent.getLineNum() +
                                 ":class " + parent.getParentName().getName() + " is not declared"
@@ -121,15 +124,13 @@ public class Program {
 
     public static boolean doesWritelnSupport(Expression argument) {
         Type type = argument.getType();
-        if(type instanceof StringType || type instanceof IntType || type instanceof ArrayType)
+        if(type instanceof StringType || type instanceof IntType || type instanceof ArrayType || type instanceof NoType)
             return true;
         if(type instanceof BooleanType)
             return false;
-        System.out.println("Type is " + type);
         try{
             // type mitone int bashe!
             SymbolTableItem item = SymbolTable.top.get(((UserDefinedType) type).getName().getName()+"@var");
-            System.out.println(((SymbolTableVariableItem)item).getType());
         } catch (ItemNotFoundException e){
             //
         }

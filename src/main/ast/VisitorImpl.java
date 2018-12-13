@@ -36,10 +36,6 @@ public class VisitorImpl implements Visitor {
 
 		program.createClassSymbolTableHierarchy();
 
-//        for (ClassDeclaration classDeclaration : program.getClasses())
-//            Program.addSymbolTableItems(Program.getClassSymbolTable(classDeclaration.getName().getName()),
-//					classDeclaration);
-
         Program.passNum = 2;
 
         program.getMainClass().accept(this);
@@ -53,13 +49,13 @@ public class VisitorImpl implements Visitor {
     public void visit(ClassDeclaration classDeclaration) {
         String name = classDeclaration.getName().getName();
         if(Program.passNum == 1){
-
             try{
                 SymbolTable.top.put(new SymbolTableClassItem(name));
             }
             catch(ItemAlreadyExistsException e){
                 try {
                     String newName = "temp" + Program.getNewTempVar() + "-" + name;
+                    // it will make problems if we have multiple classes with one name
 //                    classDeclaration.setName(new Identifier(newName, classDeclaration.getLineNum()));
                     SymbolTable.top.put(new SymbolTableClassItem(newName)
                     ); // now what?!?
@@ -146,7 +142,6 @@ public class VisitorImpl implements Visitor {
         }
         else if(Program.passNum == 2){
             Program.addMessage(methodDeclaration.toString());
-
 
             Type varType = methodDeclaration.getReturnType();
             try{
@@ -239,14 +234,7 @@ public class VisitorImpl implements Visitor {
                         , PhaseNum.three);
                 varDeclaration.setType(new NoType());
             }
-
-
-
             //TODO: Shadow when first we are declaring variable in method
-            //TODO: age type vojod nadasht? classe declare nahshode bod? NoType!
-
-
-
         }
     }
 
@@ -388,7 +376,7 @@ public class VisitorImpl implements Visitor {
             return false;
         }
     }
-//TODO:return type of functions
+
     private boolean checkIfTypesAreNull(Expression expression) {
         if(expression.getType() == null && expression instanceof Identifier){
             String varName = ((Identifier)expression).getName();
@@ -416,11 +404,10 @@ public class VisitorImpl implements Visitor {
             //NO ERROR MESSAGE ADDING?
         }
     }
-//TODO: Age toye baghieye expression ha, expressionemon identifier bod, explicitly begim ba in method balayie accept kon.
-    //mesal: methode a darim toye class, va darim a= b
-    // in, toye taabe payini set type nmishe. noType ham nmishe. vali typesh nulle.
+
     @Override
     public void visit(Identifier identifier) {
+        Program.addMessage(identifier.toString());
         try{
             identifier.setLvalue(true);     // Identifier is Lvalue
             SymbolTableItem item = SymbolTable.top.get(identifier.getName()+"@var");
@@ -451,13 +438,10 @@ public class VisitorImpl implements Visitor {
         }
         //TODO: Age identifier esme class bashe, mgie variable not declared. toye parente class mige, ke ezafas. toye newClass ham mige. ke nabayad bege.
         //TODO: Baraye in 2 halat, chon nameshon hamishe identifiere, vase visite identifier argumente 2vom bezarim? ke modesho mosakhas kone
-        Program.addMessage(identifier.toString());
     }
 
-//TODO: Tartibe addMessage ha be ham rikhte.
     @Override
     public void visit(Length length) {
-        //DONE! [Not Verified]
         Program.addMessage(length.toString());
     	Expression expression = length.getExpression();
     	expression.accept(this);
@@ -544,7 +528,6 @@ public class VisitorImpl implements Visitor {
                     } else {
                         methodCall.setType(new NoType());
                         //TODO: ANYTHING ELSE?
-                        //TODO: UNARY EXPRESSION ACCEPTE KHODESH AVAL BAYAD BAHSE
                     }
                 }
             } catch (ItemNotFoundException e){
@@ -563,7 +546,6 @@ public class VisitorImpl implements Visitor {
             }
         }
         else if(instance instanceof This){
-            //TODO:HERE
             String className = Program.currentClass;
             try {
                 ClassDeclaration classObj = Program.getClass(className);
@@ -651,8 +633,8 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(This instance) {
-        instance.setType(new UserDefinedType(new Identifier(Program.currentClass, instance.getLineNum())));
         Program.addMessage(instance.toString());
+        instance.setType(new UserDefinedType(new Identifier(Program.currentClass, instance.getLineNum())));
     }
 
     @Override
@@ -684,14 +666,14 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(IntValue value) {
-    	value.setLvalue(false);
         Program.addMessage(value.toString());
+        value.setLvalue(false);
     }
 
     @Override
     public void visit(StringValue value) {
-    	value.setLvalue(false);
         Program.addMessage(value.toString());
+        value.setLvalue(false);
     }
 
     @Override
@@ -724,7 +706,6 @@ public class VisitorImpl implements Visitor {
 
 		for(Statement stm : block.getBody())
 			stm.accept(this);
-
     }
 
     private void checkForWrongCondition(Statement statement, Expression condition){

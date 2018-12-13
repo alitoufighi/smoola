@@ -162,14 +162,14 @@ grammar Smoola;
     ;
 
     statementAssignment returns [Statement assign]:
-        exp = expression ';'
+        exp = expression semicolon = ';'
         {
             if ($exp.exp instanceof BinaryExpression) {
                 if (((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.OperatorTypes.assign)
                     $assign = new Assign(((BinaryExpression)$exp.exp).getLeft(), ((BinaryExpression)$exp.exp).getRight());
             }
             else
-                print("Error");
+                print("Error at line "+ $semicolon.getLine());
         }
     ;
 

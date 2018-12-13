@@ -5,13 +5,13 @@ class Main {
 }
 
 class Test extends m {
-    var y : int[];
+    # var y : int[];
     def test() : int {
-        var m : m;
-        temp = 10;
-        m = new m();
-        y[1] = 2;
-        a = m.n().length;
+        # var m : m;
+        # temp = 10;
+        # m = new m();
+        # y[1] = 2;
+        Test = m.n().length;
         return 0;
     }
 }
@@ -22,7 +22,7 @@ class m extends n {
         var x : int;
         var y: boolean;
         x = 10;
-        x = !y;
+        x = !x;
         return this.a()[1];
     }
     def a() : int[]{

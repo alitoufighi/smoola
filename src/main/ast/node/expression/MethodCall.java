@@ -8,7 +8,6 @@ public class MethodCall extends Expression {
     private Expression instance;
     private Identifier methodName;
     private ArrayList<Expression> args = new ArrayList<>();
-//    private Type returnType;
 
     public MethodCall(Expression instance, Identifier methodName) {
         this.instance = instance;
@@ -16,25 +15,21 @@ public class MethodCall extends Expression {
         this.lineNum = instance.getLineNum();
     }
 
-//    public void setReturnType(Type returnType){ this.returnType = returnType; }
-
-//    public Type getReturnType() { return this.returnType; }
-
     public Expression getInstance() {
         return instance;
     }
 
-    public void setInstance(Expression instance) {
-        this.instance = instance;
-    }
+//    public void setInstance(Expression instance) {
+//        this.instance = instance;
+//    }
 
     public Identifier getMethodName() {
         return methodName;
     }
 
-    public void setMethodName(Identifier methodName) {
-        this.methodName = methodName;
-    }
+//    public void setMethodName(Identifier methodName) {
+//        this.methodName = methodName;
+//    }
 
     public ArrayList<Expression> getArgs() {
         return args;

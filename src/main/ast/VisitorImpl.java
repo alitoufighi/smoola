@@ -168,10 +168,47 @@ public class VisitorImpl implements Visitor {
                 localVar.accept(this, VarVisitType.InMethod);
             for(Statement stm : methodDeclaration.getBody())
                 stm.accept(this);
-            methodDeclaration.getReturnValue().accept(this);
+            Expression returnValue = methodDeclaration.getReturnValue();
+            returnValue.accept(this);
+
+            if(!canBeReturnValue(methodDeclaration.getReturnType(), returnValue.getType())){
+                Program.addError(
+                        "line:"+returnValue.getLineNum()+":return type must be "+methodDeclaration.getReturnType(),
+                        PhaseNum.three
+                );
+            }
 
             SymbolTable.pop();
         }
+    }
+
+    private boolean canBeReturnValue(Type methodType, Type retValType) {
+        if (methodType instanceof NoType || retValType instanceof NoType)
+            return false;
+
+        /// TODO: check the rvalue
+        if ((Program.isPrimitiveType(methodType.toString())) || Program.isPrimitiveType(retValType.toString()))
+            return methodType.toString().equals(retValType.toString());
+
+        // now we are dealing with UserDefinedTypes
+        try{
+            ClassDeclaration leftClass = Program.getClass(((UserDefinedType)methodType).getName().getName());
+            ClassDeclaration parent = Program.getClass(((UserDefinedType)retValType).getName().getName());
+            return checkPolymorphism(leftClass, parent);
+        } catch (Exception e){
+            return false;
+        }
+    }
+
+    private boolean checkPolymorphism(ClassDeclaration leftClass, ClassDeclaration parent) throws Exception {
+        while(true){
+            if(parent.getName().getName().equals(leftClass.getName().getName()))
+                return true;
+            if(!parent.hasParent())
+                break;
+            parent = Program.getClass(parent.getParentName().getName());
+        }
+        return false;
     }
 
     private void setUserDefinedType(Type varType) throws Exception {
@@ -319,12 +356,7 @@ public class VisitorImpl implements Visitor {
         try{
             ClassDeclaration leftClass = Program.getClass(((UserDefinedType)left.getType()).getName().getName());
             ClassDeclaration parent = Program.getClass(((UserDefinedType)right.getType()).getName().getName());
-            do {
-                if(parent.getName().getName().equals(leftClass.getName().getName()))
-                    return true;
-                parent = Program.getClass(parent.getParentName().getName());
-            } while(parent.hasParent());
-            return false;
+            return checkPolymorphism(leftClass, parent);
         } catch (Exception e){
             return false;
         }

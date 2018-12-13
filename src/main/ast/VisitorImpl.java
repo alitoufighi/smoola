@@ -283,6 +283,7 @@ public class VisitorImpl implements Visitor {
         Expression instance = arrayCall.getInstance();
         // instance must be array type
         instance.accept(this);
+        arrayCall.setLvalue(true);
         if(!(instance.getType() instanceof ArrayType)){
             //TODO: Is message below right for this error?
             Program.addError(
@@ -314,10 +315,13 @@ public class VisitorImpl implements Visitor {
     	BinaryOperator.OperatorTypes operator = binaryExpression.getBinaryOperator();
     	if(operator.equals(BinaryOperator.OperatorTypes.assign)){
     	    if(isCompatibleForAssignment(left, right))
-                binaryExpression.setType(left.getType());
+				binaryExpression.setType(left.getType());
     	    else
     	        binaryExpression.setType(new NoType());
-        } else {
+
+			binaryExpression.setLvalue(left.isLvalue());
+
+		} else {
     	    if(operator.equals(BinaryOperator.OperatorTypes.eq) || operator.equals(BinaryOperator.OperatorTypes.neq)){
     	        if(Program.isPrimitiveType(left.getType().toString()) && left.getType().toString().equals(right.getType().toString())){
     	            binaryExpression.setType(new BooleanType());
@@ -339,6 +343,7 @@ public class VisitorImpl implements Visitor {
                     );
                 }
             }
+            binaryExpression.setLvalue(false);
         }
     }
 
@@ -386,10 +391,12 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(Identifier identifier) {
         try{
+            identifier.setLvalue(true);     // Identifier is Lvalue
             SymbolTableItem item = SymbolTable.top.get(identifier.getName()+"@var");
 
             Type type = ((SymbolTableVariableItem)item).getType();
             identifier.setType(type);
+
         } catch (ItemNotFoundException e){
             try{
                 SymbolTable.top.get(identifier.getName()+"@method");
@@ -411,6 +418,7 @@ public class VisitorImpl implements Visitor {
         //TODO: Baraye in 2 halat, chon nameshon hamishe identifiere, vase visite identifier argumente 2vom bezarim? ke modesho mosakhas kone
         Program.addMessage(identifier.toString());
     }
+
 //TODO: Tartibe addMessage ha be ham rikhte.
     @Override
     public void visit(Length length) {
@@ -418,6 +426,7 @@ public class VisitorImpl implements Visitor {
         Program.addMessage(length.toString());
     	Expression expression = length.getExpression();
     	expression.accept(this);
+    	length.setLvalue(false);
     	if(!(expression.getType() instanceof ArrayType) && !(expression.getType() instanceof NoType)){
     	    Program.addError(
                     "line:"+length.getLineNum()+":length is only allowed on arrays",
@@ -437,7 +446,7 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(MethodCall methodCall) {
     	Program.addMessage(methodCall.toString());
-
+    	methodCall.setLvalue(false);
         String methodName = methodCall.getMethodName().getName();
         Expression instance = methodCall.getInstance();
         instance.accept(this); // to fill return types from first
@@ -571,6 +580,7 @@ public class VisitorImpl implements Visitor {
             Program.addMessage(newArray.toString());
     	newArray.getExpression().accept(this);
     	newArray.setType(new ArrayType());
+    	newArray.setLvalue(false);
     }
 
     @Override
@@ -585,6 +595,7 @@ public class VisitorImpl implements Visitor {
         } catch (Exception e){
             newClass.setType(new NoType());
         }
+        newClass.setLvalue(false);
     }
 
     @Override
@@ -610,6 +621,8 @@ public class VisitorImpl implements Visitor {
                     PhaseNum.three
             );
         }
+
+        unaryExpression.setLvalue(false);
     }
 //TODO: Atfe Manteqi: && ||
     @Override
@@ -619,11 +632,13 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(IntValue value) {
+    	value.setLvalue(false);
         Program.addMessage(value.toString());
     }
 
     @Override
     public void visit(StringValue value) {
+    	value.setLvalue(false);
         Program.addMessage(value.toString());
     }
 
@@ -636,12 +651,19 @@ public class VisitorImpl implements Visitor {
 		Expression rvalue = assign.getrValue();
 		rvalue.accept(this);
 
-        if(!isCompatibleForAssignment(lvalue, rvalue)){
+        if(!isCompatibleForAssignment(lvalue, rvalue)) {
             Program.addError(
                     "line:"+assign.getLineNum()+":unsupported operand type for "+BinaryOperator.OperatorTypes.assign,
                     PhaseNum.three
             );
         }
+
+        else if (!lvalue.isLvalue()) {
+			Program.addError(
+					"line:"+assign.getLineNum()+":left side of assignment must be a valid lvalue",
+					PhaseNum.three
+			);
+		}
     }
 
     @Override

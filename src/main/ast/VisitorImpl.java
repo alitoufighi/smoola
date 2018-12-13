@@ -142,8 +142,6 @@ public class VisitorImpl implements Visitor {
                 catch (ItemAlreadyExistsException e1){
                     // ?!?
                 }
-                Program.invalidate();
-
                 Program.addError(
                     "line:" + methodDeclaration.getLineNum() +
                             ":Redefinition of method " + name
@@ -287,6 +285,7 @@ public class VisitorImpl implements Visitor {
     	        if(Program.isPrimitiveType(left.getType().toString()) && left.getType().toString().equals(right.getType().toString())){
     	            binaryExpression.setType(new BooleanType());
                 } else {
+    	            binaryExpression.setType(new NoType());
     	            Program.addError(
     	                    "line:"+binaryExpression.getLineNum()+":unsupported operand type for " + operator.name(),
                             PhaseNum.three
@@ -296,6 +295,7 @@ public class VisitorImpl implements Visitor {
     	        if(left.getType().toString().equals("int") && right.getType().toString().equals("int")){
     	            binaryExpression.setType(new IntType());
                 } else {
+    	            binaryExpression.setType(new NoType());
                     Program.addError(
                             "line:"+binaryExpression.getLineNum()+":unsupported operand type for " + operator.name(),
                             PhaseNum.three
@@ -306,7 +306,7 @@ public class VisitorImpl implements Visitor {
     }
 
     private boolean isCompatibleForAssignment(Expression left, Expression right) {
-        if ((left.getType() instanceof NoType) || (right.getType() instanceof NoType))
+        if (left.getType() instanceof NoType || right.getType() instanceof NoType)
             return true;
 
         if (checkIfTypesAreNull(left)) return true;
@@ -329,7 +329,7 @@ public class VisitorImpl implements Visitor {
             return false;
         }
     }
-
+//TODO:return type of functions
     private boolean checkIfTypesAreNull(Expression expression) {
         if(expression.getType() == null && expression instanceof Identifier){
             Program.addError(
@@ -502,7 +502,7 @@ public class VisitorImpl implements Visitor {
                                 PhaseNum.three
                         );
                         //TODO: NO TYPE?!
-                        //methodCall.setReturnType(NoType);
+                        methodCall.setType(new NoType());
                     }
                     ClassDeclaration classDeclaration = Program.getClass(instanceTypeName);
                     if (!isMethodInClass(classDeclaration, methodName)){
@@ -637,18 +637,9 @@ public class VisitorImpl implements Visitor {
     public void visit(Conditional conditional) {
         Program.addMessage(conditional.toString());
 		Expression condition = conditional.getExpression();
-        checkForWrongCondition(conditional, condition);
-//        if(condition instanceof BinaryExpression){
-//            if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())) Program.addError(
-//                    "line:" + conditional.getLineNum() + ":condition type must be boolean"
-//                    , PhaseNum.three);
-//        }
-//        else if(!(condition instanceof BooleanValue)) Program.addError(
-//                "line:" + conditional.getLineNum() + ":condition type must be boolean"
-//                , PhaseNum.three
-//        );
-        /* TODO: if has errors, change type of condition? */
         condition.accept(this);
+        checkForWrongCondition(conditional, condition);
+        /* TODO: if has errors, change type of condition? */
         conditional.getConsequenceBody().accept(this);
         if(conditional.hasAlternativeBody())
            conditional.getAlternativeBody().accept(this);
@@ -658,19 +649,10 @@ public class VisitorImpl implements Visitor {
     public void visit(While loop) {
         Program.addMessage(loop.toString());
         Expression condition = loop.getCondition();
+        condition.accept(this);
         checkForWrongCondition(loop, condition);
 
-//        if(condition instanceof BinaryExpression){
-//           if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())) Program.addError(
-//                   "line:" + loop.getLineNum() + ":condition type must be boolean"
-//                   , PhaseNum.three);
-//        }
-//        else if(!(condition instanceof BooleanValue)) Program.addError(
-//                "line:" + loop.getLineNum() + ":condition type must be boolean"
-//                , PhaseNum.three
-//        );
         //TODO: if has errors, change type of condition?
-        condition.accept(this);
 		loop.getBody().accept(this);
     }
 
@@ -679,6 +661,7 @@ public class VisitorImpl implements Visitor {
         Program.addMessage(write.toString());
 		Expression argument = write.getArg();
 		if(!Program.doesWritelnSupport(argument)){
+		    argument.setType(new NoType());
             Program.addError(
                     "line:"+write.getLineNum()+":unsupported type for writeln",
                     PhaseNum.three

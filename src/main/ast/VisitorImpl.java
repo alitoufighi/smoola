@@ -110,7 +110,7 @@ public class VisitorImpl implements Visitor {
 
             classDeclaration.getName().accept(this);
             if(classDeclaration.hasParent())
-                classDeclaration.getParentName().accept(this);
+                classDeclaration.getParentName().accept(this, 1); //TODO: CLEAN THIS MESS UP!
             for(VarDeclaration vdec : classDeclaration.getVarDeclarations())
                 vdec.accept(this, VarVisitType.InClass);
             for(MethodDeclaration mdec : classDeclaration.getMethodDeclarations())
@@ -155,7 +155,11 @@ public class VisitorImpl implements Visitor {
 
 
             Type varType = methodDeclaration.getReturnType();
-            setUserDefinedType(varType);
+            try{
+                setUserDefinedType(varType);
+            } catch (Exception e){
+                //TODO:?
+            }
 
             SymbolTable.push(new SymbolTable(SymbolTable.top));
 
@@ -172,38 +176,46 @@ public class VisitorImpl implements Visitor {
         }
     }
 
-    private void setUserDefinedType(Type varType) {
+    private void setUserDefinedType(Type varType) throws Exception {
         if(varType instanceof UserDefinedType){
             String className = ((UserDefinedType)varType).getName().getName();
-            try{
-                ((UserDefinedType) varType).setClassDeclaration(Program.getClass(className));
-            } catch (Exception e){
-                Program.addError(
-                        "line:" + ((UserDefinedType) varType).getName().getLineNum() +
-                                ":class " + className + " is not declared"
-                        , PhaseNum.three);
-            }
+            ((UserDefinedType) varType).setClassDeclaration(Program.getClass(className));
         }
     }
 
     @Override
     public void visit(VarDeclaration varDeclaration, VarVisitType visitType) {
         String name = varDeclaration.getIdentifier().getName();
-        if(Program.passNum == 1)
+        if(Program.passNum == 1) {
             putVariableItemToTopSymbolTable(varDeclaration, name);
+        }
         else if(Program.passNum == 2){
-            Type varType = varDeclaration.getType();
-            setUserDefinedType(varType);
+            Program.addMessage(varDeclaration.toString());
 
             // if we're in accepting a local variable of a method,
             // we should try to put it in symbol table
-            //TODO: Shadow when first we are declaring variable in method
-            if(visitType == VarVisitType.InMethod)
+            if(visitType == VarVisitType.InMethod) {
                 putVariableItemToTopSymbolTable(varDeclaration, name);
+            }
+            varDeclaration.getIdentifier().accept(this); //in chi? :D
+            Type varType = varDeclaration.getType();
+            try{
+                setUserDefinedType(varType);
+            } catch (Exception e){
+                Program.addError(
+                        "line:" + ((UserDefinedType) varType).getName().getLineNum() +
+                                ":class " + ((UserDefinedType) varType).getName().getName() + " is not declared"
+                        , PhaseNum.three);
+                varDeclaration.setType(new NoType());
+            }
 
-            Program.addMessage(varDeclaration.toString());
 
-            varDeclaration.getIdentifier().accept(this);
+
+            //TODO: Shadow when first we are declaring variable in method
+            //TODO: age type vojod nadasht? classe declare nahshode bod? NoType!
+
+
+
         }
     }
 
@@ -294,10 +306,11 @@ public class VisitorImpl implements Visitor {
     }
 
     private boolean isCompatibleForAssignment(Expression left, Expression right) {
-        System.out.println("ASSCOMP LINE "+left.getLineNum()+" "+left.getType()+" "+right.getType());
-
         if ((left.getType() instanceof NoType) || (right.getType() instanceof NoType))
             return true;
+
+        if (checkIfTypesAreNull(left)) return true;
+        if (checkIfTypesAreNull(right)) return true;
 
         /// TODO: check the rvalue
         if ((Program.isPrimitiveType(left.getType().toString())))
@@ -317,10 +330,32 @@ public class VisitorImpl implements Visitor {
         }
     }
 
+    private boolean checkIfTypesAreNull(Expression expression) {
+        if(expression.getType() == null && expression instanceof Identifier){
+            Program.addError(
+                    "line:"+expression.getLineNum()+":variable "+((Identifier)expression).getName()+" is not declared",
+                    PhaseNum.three
+            );
+            expression.setType(new NoType());
+            return true;
+        }
+        return false;
+    }
+
+    public void visit(Identifier identifier, int mode){
+        try{
+            SymbolTable.top.get(identifier.getName()+"@class");
+        } catch (ItemNotFoundException e){
+            identifier.setType(new NoType());
+            //NO ERROR MESSAGE ADDING?
+        }
+    }
+
     @Override
     public void visit(Identifier identifier) {
         try{
             SymbolTableItem item = SymbolTable.top.get(identifier.getName()+"@var");
+
             Type type = ((SymbolTableVariableItem)item).getType();
             identifier.setType(type);
         } catch (ItemNotFoundException e){
@@ -330,8 +365,8 @@ public class VisitorImpl implements Visitor {
                 try{
                     SymbolTable.top.get(identifier.getName()+"@class");
                 } catch (ItemNotFoundException e2){
-                    System.out.println("HERE "+identifier.getName());
                     identifier.setType(new NoType());
+
                     Program.addError(
                             "line:"+identifier.getLineNum()+":variable "+identifier.getName()+
                                     " is not declared",
@@ -340,9 +375,11 @@ public class VisitorImpl implements Visitor {
                 }
             }
         }
+        //TODO: Age identifier esme class bashe, mgie variable not declared. toye parente class mige, ke ezafas. toye newClass ham mige. ke nabayad bege.
+        //TODO: Baraye in 2 halat, chon nameshon hamishe identifiere, vase visite identifier argumente 2vom bezarim? ke modesho mosakhas kone
         Program.addMessage(identifier.toString());
     }
-
+//TODO: Tartibe addMessage ha be ham rikhte.
     @Override
     public void visit(Length length) {
         //DONE! [Not Verified]
@@ -371,8 +408,7 @@ public class VisitorImpl implements Visitor {
 
         String methodName = methodCall.getMethodName().getName();
         Expression instance = methodCall.getInstance();
-        methodCall.getInstance().accept(this); // to fill return types from first
-
+        instance.accept(this); // to fill return types from first
         if(instance instanceof NewClass){
             String className = ((NewClass) instance).getClassName().getName();
             try {
@@ -424,11 +460,13 @@ public class VisitorImpl implements Visitor {
                     }
                 }
             } catch (ItemNotFoundException e){
+                instance.setType(new NoType());
                 Program.addError(
                         "line:" + methodCall.getMethodName().getLineNum() +
                                 ":variable " + instanceVarName +
                                 " is not declared"
                         , PhaseNum.three);
+                methodCall.setType(new NoType());
             }
         }
         else if(instance instanceof This){
@@ -508,8 +546,13 @@ public class VisitorImpl implements Visitor {
         Program.addMessage(newClass.toString());
 
 		Identifier className = newClass.getClassName();
-		newClass.setType(new UserDefinedType(className));
-		className.accept(this);
+        className.accept(this, 1); //TODO: CLEAN THIS MESS UP!
+        try{
+            Program.getClass(className.getName());
+            newClass.setType(new UserDefinedType(className));
+        } catch (Exception e){
+            newClass.setType(new NoType());
+        }
     }
 
     @Override
@@ -561,12 +604,12 @@ public class VisitorImpl implements Visitor {
 		Expression rvalue = assign.getrValue();
 		rvalue.accept(this);
 
-		System.out.println(lvalue.getType()+" "+rvalue.getType()+" "+assign.getLineNum());
-        if(!isCompatibleForAssignment(lvalue, rvalue))
+        if(!isCompatibleForAssignment(lvalue, rvalue)){
             Program.addError(
                     "line:"+assign.getLineNum()+":unsupported operand type for "+BinaryOperator.OperatorTypes.assign,
                     PhaseNum.three
             );
+        }
     }
 
     @Override
@@ -578,19 +621,32 @@ public class VisitorImpl implements Visitor {
 
     }
 
+    private void checkForWrongCondition(Statement statement, Expression condition){
+        if(condition instanceof BinaryExpression){
+            if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())) Program.addError(
+                    "line:" + statement.getLineNum() + ":condition type must be boolean"
+                    , PhaseNum.three);
+        }
+        else if(!(condition instanceof BooleanValue)) Program.addError(
+                "line:" + statement.getLineNum() + ":condition type must be boolean"
+                , PhaseNum.three
+        );
+    }
+
     @Override
     public void visit(Conditional conditional) {
         Program.addMessage(conditional.toString());
 		Expression condition = conditional.getExpression();
-        if(condition instanceof BinaryExpression){
-            if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())) Program.addError(
-                    "line:" + conditional.getLineNum() + ":condition type must be boolean"
-                    , PhaseNum.three);
-        }
-        else if(!(condition instanceof BooleanValue)) Program.addError(
-                "line:" + conditional.getLineNum() + ":condition type must be boolean"
-                , PhaseNum.three
-        );
+        checkForWrongCondition(conditional, condition);
+//        if(condition instanceof BinaryExpression){
+//            if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())) Program.addError(
+//                    "line:" + conditional.getLineNum() + ":condition type must be boolean"
+//                    , PhaseNum.three);
+//        }
+//        else if(!(condition instanceof BooleanValue)) Program.addError(
+//                "line:" + conditional.getLineNum() + ":condition type must be boolean"
+//                , PhaseNum.three
+//        );
         /* TODO: if has errors, change type of condition? */
         condition.accept(this);
         conditional.getConsequenceBody().accept(this);
@@ -602,15 +658,17 @@ public class VisitorImpl implements Visitor {
     public void visit(While loop) {
         Program.addMessage(loop.toString());
         Expression condition = loop.getCondition();
-        if(condition instanceof BinaryExpression){
-           if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())) Program.addError(
-                   "line:" + loop.getLineNum() + ":condition type must be boolean"
-                   , PhaseNum.three);
-        }
-        else if(!(condition instanceof BooleanValue)) Program.addError(
-                "line:" + loop.getLineNum() + ":condition type must be boolean"
-                , PhaseNum.three
-        );
+        checkForWrongCondition(loop, condition);
+
+//        if(condition instanceof BinaryExpression){
+//           if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())) Program.addError(
+//                   "line:" + loop.getLineNum() + ":condition type must be boolean"
+//                   , PhaseNum.three);
+//        }
+//        else if(!(condition instanceof BooleanValue)) Program.addError(
+//                "line:" + loop.getLineNum() + ":condition type must be boolean"
+//                , PhaseNum.three
+//        );
         //TODO: if has errors, change type of condition?
         condition.accept(this);
 		loop.getBody().accept(this);

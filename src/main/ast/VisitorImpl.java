@@ -109,8 +109,9 @@ public class VisitorImpl implements Visitor {
             SymbolTable.push(new SymbolTable(Program.getClassSymbolTable(name)));
 
             classDeclaration.getName().accept(this);
-            if(classDeclaration.hasParent())
+            if(classDeclaration.hasParent()){
                 classDeclaration.getParentName().accept(this, 1); //TODO: CLEAN THIS MESS UP!
+            }
             for(VarDeclaration vdec : classDeclaration.getVarDeclarations())
                 vdec.accept(this, VarVisitType.InClass);
             for(MethodDeclaration mdec : classDeclaration.getMethodDeclarations())
@@ -166,7 +167,12 @@ public class VisitorImpl implements Visitor {
             for(VarDeclaration localVar : methodDeclaration.getLocalVars())
                 localVar.accept(this, VarVisitType.InMethod);
             for(Statement stm : methodDeclaration.getBody()){
-                stm.accept(this);
+                if(stm instanceof DummyStatement){
+                    Program.addError(
+                            "line:"+stm.getLineNum()+":invalid statement at "+methodDeclaration.getName().getName(),
+                            PhaseNum.three
+                    );
+                } else stm.accept(this);
             }
             Expression returnValue = methodDeclaration.getReturnValue();
             returnValue.accept(this);
@@ -177,7 +183,6 @@ public class VisitorImpl implements Visitor {
                         PhaseNum.three
                 );
             }
-
             SymbolTable.pop();
         }
     }
@@ -436,6 +441,7 @@ public class VisitorImpl implements Visitor {
                     } catch (ItemAlreadyExistsException e3) {
                         // WTF!
                     }
+                    //TODO: toye methodcall, baad az in ke accept kardim esmesho, bbinim age instancesh NoType e, dg be inesh gir nadim!
                     Program.addError(
                             "line:"+identifier.getLineNum()+":variable "+identifier.getName()+
                                     " is not declared",
@@ -633,6 +639,10 @@ public class VisitorImpl implements Visitor {
             Program.getClass(className.getName());
             newClass.setType(new UserDefinedType(className));
         } catch (Exception e){
+            Program.addError(
+                    "line:"+newClass.getLineNum()+":class "+className.getName()+" is not declared",
+                    PhaseNum.three
+            );
             newClass.setType(new NoType());
         }
         newClass.setLvalue(false);
@@ -742,6 +752,12 @@ public class VisitorImpl implements Visitor {
 
     @Override
     public void visit(MethodCallInMain methodCallInMain) {
+        System.out.println("VISITING METHOD CALL IN MAIN");
+        methodCallInMain.getInstance().accept(this);
+        methodCallInMain.getMethodName().accept(this);
+        for(Expression arg : methodCallInMain.getArgs()){
+            arg.accept(this);
+        }
         //TODO: implement appropriate visit functionality
     }
 

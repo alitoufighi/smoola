@@ -10,6 +10,7 @@ import ast.node.PhaseNum;
 import ast.node.Program;
 import ast.node.declaration.ClassDeclaration;
 import ast.node.declaration.MethodDeclaration;
+import ast.node.declaration.MethodNotFoundException;
 import ast.node.declaration.VarDeclaration;
 import ast.node.expression.*;
 import ast.node.expression.Value.BooleanValue;
@@ -74,7 +75,7 @@ public class VisitorImpl implements Visitor {
                     // ?!?
                 }
                 Program.addError(
-                    "line:" + classDeclaration.getLineNum() +
+                    "Line:" + classDeclaration.getLineNum() +
                             ":Redefinition of class " + name
                 , PhaseNum.two);
             }
@@ -100,7 +101,7 @@ public class VisitorImpl implements Visitor {
                 }
                 catch (ItemNotFoundException e){
                     Program.addError(
-                        "line:" + classDeclaration.getLineNum() +
+                        "Line:" + classDeclaration.getLineNum() +
                                 ":class " + parentName + " is not declared"
                     , PhaseNum.three);
                 }
@@ -110,7 +111,7 @@ public class VisitorImpl implements Visitor {
 
             classDeclaration.getName().accept(this);
             if(classDeclaration.hasParent()){
-                classDeclaration.getParentName().accept(this, 1); //TODO: CLEAN THIS MESS UP!
+                classDeclaration.getParentName().accept(this, 0); //TODO: CLEAN THIS MESS UP!
             }
             for(VarDeclaration vdec : classDeclaration.getVarDeclarations())
                 vdec.accept(this, VarVisitType.InClass);
@@ -144,7 +145,7 @@ public class VisitorImpl implements Visitor {
                     // ?!?
                 }
                 Program.addError(
-                    "line:" + methodDeclaration.getLineNum() +
+                    "Line:" + methodDeclaration.getLineNum() +
                             ":Redefinition of method " + name
                 , PhaseNum.two);
             }
@@ -156,7 +157,7 @@ public class VisitorImpl implements Visitor {
             try{
                 setUserDefinedType(varType);
             } catch (Exception e){
-                //TODO:?
+                //Nothing
             }
 
             SymbolTable.push(new SymbolTable(SymbolTable.top));
@@ -169,7 +170,7 @@ public class VisitorImpl implements Visitor {
             for(Statement stm : methodDeclaration.getBody()){
                 if(stm instanceof DummyStatement){
                     Program.addError(
-                            "line:"+stm.getLineNum()+":invalid statement at "+methodDeclaration.getName().getName(),
+                            "Line:"+stm.getLineNum()+":invalid statement at "+methodDeclaration.getName().getName(),
                             PhaseNum.three
                     );
                 } else stm.accept(this);
@@ -179,7 +180,7 @@ public class VisitorImpl implements Visitor {
 
             if(!canBeReturnValue(methodDeclaration.getReturnType(), returnValue.getType())){
                 Program.addError(
-                        "line:"+returnValue.getLineNum()+":return type must be "+methodDeclaration.getReturnType(),
+                        "Line:"+returnValue.getLineNum()+":return type must be "+methodDeclaration.getReturnType(),
                         PhaseNum.three
                 );
             }
@@ -191,7 +192,6 @@ public class VisitorImpl implements Visitor {
         if (methodType instanceof NoType || retValType instanceof NoType)
             return false;
 
-        /// TODO: check the rvalue
         if ((Program.isPrimitiveType(methodType.toString())) || Program.isPrimitiveType(retValType.toString()))
             return methodType.toString().equals(retValType.toString());
 
@@ -242,12 +242,11 @@ public class VisitorImpl implements Visitor {
                 setUserDefinedType(varType);
             } catch (Exception e){
                 Program.addError(
-                        "line:" + ((UserDefinedType) varType).getName().getLineNum() +
+                        "Line:" + ((UserDefinedType) varType).getName().getLineNum() +
                                 ":class " + ((UserDefinedType) varType).getName().getName() + " is not declared"
                         , PhaseNum.three);
                 varDeclaration.setType(new NoType());
             }
-            //TODO: Shadow when first we are declaring variable in method
         }
     }
 
@@ -268,7 +267,7 @@ public class VisitorImpl implements Visitor {
             }
             Program.invalidate();
             Program.addError(
-                "line:" + varDeclaration.getLineNum() +
+                "Line:" + varDeclaration.getLineNum() +
                         ":Redefinition of variable " + name
             , PhaseNum.two);
         }
@@ -293,7 +292,7 @@ public class VisitorImpl implements Visitor {
     private void operandError(ArrayCall arrayCall, Expression expression) {
         if(!(expression.getType() instanceof NoType) && expression.getType() != null)
             Program.addError(
-                    "line:"+arrayCall.getLineNum()+":unsupported operand type for "+expression.getType(),
+                    "Line:"+arrayCall.getLineNum()+":unsupported operand type for "+expression.getType(),
                     PhaseNum.three
             );
         expression.setType(new NoType());
@@ -304,12 +303,11 @@ public class VisitorImpl implements Visitor {
         Program.addMessage(binaryExpression.toString());
     	Expression left = binaryExpression.getLeft();
     	if(left instanceof Identifier)
-    	    ((Identifier) left).accept(this, 1);
+    	    ((Identifier) left).accept(this, 2);
     	else left.accept(this);
-    	//TODO: Check rvalue and lvalue for left and right operands
     	Expression right = binaryExpression.getRight();
         if(right instanceof Identifier)
-            ((Identifier) right).accept(this, 1);
+            ((Identifier) right).accept(this, 2);
         else {
             right.accept(this);
         }
@@ -332,7 +330,7 @@ public class VisitorImpl implements Visitor {
                 } else {
     	            binaryExpression.setType(new NoType());
     	            Program.addError(
-    	                    "line:"+binaryExpression.getLineNum()+":unsupported operand type for " + operator.name(),
+    	                    "Line:"+binaryExpression.getLineNum()+":unsupported operand type for " + operator.name(),
                             PhaseNum.three
                     );
                 }
@@ -345,7 +343,7 @@ public class VisitorImpl implements Visitor {
                     } else {
                         binaryExpression.setType(new NoType());
                         Program.addError(
-                                "line:"+binaryExpression.getLineNum()+":unsupported operand type for " + operator.name(),
+                                "Line:"+binaryExpression.getLineNum()+":unsupported operand type for " + operator.name(),
                                 PhaseNum.three
                         );
                     }
@@ -361,7 +359,7 @@ public class VisitorImpl implements Visitor {
                     } else {
                         binaryExpression.setType(new NoType());
                         Program.addError(
-                                "line:"+binaryExpression.getLineNum()+":unsupported operand type for " + operator.name(),
+                                "Line:"+binaryExpression.getLineNum()+":unsupported operand type for " + operator.name(),
                                 PhaseNum.three
                         );
                     }
@@ -400,7 +398,7 @@ public class VisitorImpl implements Visitor {
                 // WTF!
             }
             Program.addError(
-                    "line:"+expression.getLineNum()+":variable "+varName+" is not declared",
+                    "Line:"+expression.getLineNum()+":variable "+varName+" is not declared",
                     PhaseNum.three
             );
             return true;
@@ -408,14 +406,25 @@ public class VisitorImpl implements Visitor {
         return false;
     }
 
+    //This is the worst thing I have ever written
+    // If you're called with this method, you never need to be type checked.
+    // Your type is set by other things.
     public void visit(Identifier identifier, int mode){
-        try{
-            SymbolTable.top.get(identifier.getName()+"@class");
-            SymbolTable.top.get(identifier.getName()+"@method");
-        } catch (ItemNotFoundException e){
-            identifier.setType(new NoType());
-            //NO ERROR MESSAGE ADDING?
-        }
+        // mode: 0 class
+        // mode: 1 method
+        // mode: 2 variable
+//        try{
+//            if(mode == 0) {
+//                SymbolTable.top.get(identifier.getName()+"@class");
+//            } else if(mode == 1)
+//                SymbolTable.top.get(identifier.getName()+"@method");
+//            else if(mode == 2)
+//                SymbolTable.top.get(identifier.getName()+"@var");
+//        } catch (ItemNotFoundException e){
+//            identifier.setType(new NoType());
+//            //NO ERROR MESSAGE ADDING?
+//        }
+        identifier.setType(new NoType());
     }
 
     @Override
@@ -441,17 +450,14 @@ public class VisitorImpl implements Visitor {
                     } catch (ItemAlreadyExistsException e3) {
                         // WTF!
                     }
-                    //TODO: toye methodcall, baad az in ke accept kardim esmesho, bbinim age instancesh NoType e, dg be inesh gir nadim!
                     Program.addError(
-                            "line:"+identifier.getLineNum()+":variable "+identifier.getName()+
+                            "Line:"+identifier.getLineNum()+":variable "+identifier.getName()+
                                     " is not declared",
                             PhaseNum.three
                     );
                 }
             }
         }
-        //TODO: Age identifier esme class bashe, mgie variable not declared. toye parente class mige, ke ezafas. toye newClass ham mige. ke nabayad bege.
-        //TODO: Baraye in 2 halat, chon nameshon hamishe identifiere, vase visite identifier argumente 2vom bezarim? ke modesho mosakhas kone
     }
 
     @Override
@@ -462,7 +468,7 @@ public class VisitorImpl implements Visitor {
     	length.setLvalue(false);
     	if(!(expression.getType() instanceof ArrayType) && !(expression.getType() instanceof NoType)){
     	    Program.addError(
-                    "line:"+length.getLineNum()+":length is only allowed on arrays",
+                    "Line:"+length.getLineNum()+":length is only allowed on arrays",
                     PhaseNum.three
             );
         }
@@ -476,6 +482,33 @@ public class VisitorImpl implements Visitor {
         return false;
     }
 
+    private void checkForArgs(ArrayList<Type> methodArgsType, ArrayList<Type> methodCallArgsType,
+                              String methodName, int lineNum){
+        if(methodCallArgsType.size() > methodArgsType.size()){
+            Program.addError(
+                    "line:"+lineNum+":extra args are provided for "+methodName+
+                            ", expected "+methodArgsType.size()+" but found "+methodCallArgsType.size(),
+                    PhaseNum.three
+            );
+        } else if(methodCallArgsType.size() < methodArgsType.size()){
+            Program.addError(
+                    "line:"+lineNum+":inadequate args are provided for "+methodName+
+                    ", expected "+methodArgsType.size()+" but found "+methodCallArgsType.size(),
+                    PhaseNum.three
+            );
+        } else {
+            for(int i = 0; i < methodArgsType.size(); ++i){
+                if(!methodArgsType.get(i).equals(methodCallArgsType.get(i))){
+                    Program.addError(
+                            "line:"+lineNum+":expected "+methodArgsType.get(i)+
+                                    " but found "+methodCallArgsType.get(i)+" at arg no. "+(i+1),
+                            PhaseNum.three
+                    );
+                }
+            }
+        }
+    }
+
     @Override
     public void visit(MethodCall methodCall) {
     	Program.addMessage(methodCall.toString());
@@ -487,17 +520,24 @@ public class VisitorImpl implements Visitor {
         for(Expression arg : methodCall.getArgs())
             arg.accept(this);
 
-        if(instance instanceof NewClass){
+        if(instance.getType() instanceof NoType){
+            methodCall.setType(new NoType());
+        }
+        else if(instance instanceof NewClass){
             String className = ((NewClass) instance).getClassName().getName();
-
             try {
-
                 ClassDeclaration classDeclaration = Program.getClass(className);
-                if (isMethodInClass(classDeclaration, methodName))
+                try{
                     methodCall.setType(classDeclaration.getMethodReturnType(methodName));
-                else {
+                    ArrayList<Type> methodArgsType = classDeclaration.getMethodArgsType(methodName);
+                    ArrayList<Type> methodCallArgsType = new ArrayList<>();
+                    for(Expression arg : methodCall.getArgs())
+                        methodCallArgsType.add(arg.getType());
+                    checkForArgs(methodArgsType, methodCallArgsType, methodName, methodCall.getLineNum());
+                }
+                catch (MethodNotFoundException e){
                     Program.addError(
-                            "line:" + ((NewClass) instance).getClassName().getLineNum() +
+                            "Line:" + ((NewClass) instance).getClassName().getLineNum() +
                                     ":there is no method named " + methodName +
                                     " in class " + className
                             , PhaseNum.three);
@@ -506,7 +546,7 @@ public class VisitorImpl implements Visitor {
             } catch (Exception e){
                 methodCall.setType(new NoType());
                 Program.addError(
-                    "line:" + methodCall.getLineNum() +
+                    "Line:" + methodCall.getLineNum() +
                             ":class " + className + " is not declared"
                         , PhaseNum.three);
             }
@@ -521,12 +561,17 @@ public class VisitorImpl implements Visitor {
                         String className = ((UserDefinedType) instanceType).getName().getName();
                         try {
                             ClassDeclaration classDeclaration = Program.getClass(className);
-                            if (isMethodInClass(classDeclaration, methodName)){
+                            try{
                                 methodCall.setType(classDeclaration.getMethodReturnType(methodName));
+                                ArrayList<Type> methodArgsType = classDeclaration.getMethodArgsType(methodName);
+                                ArrayList<Type> methodCallArgsType = new ArrayList<>();
+                                for(Expression arg : methodCall.getArgs())
+                                    methodCallArgsType.add(arg.getType());
+                                checkForArgs(methodArgsType, methodCallArgsType, methodName, methodCall.getLineNum());
                             }
-                            else {
+                            catch (MethodNotFoundException e){
                                 Program.addError(
-                                        "line:" + instance.getLineNum() +
+                                        "Line:" + instance.getLineNum() +
                                                 ":there is no method named " + methodName +
                                                 " in class " + className
                                         , PhaseNum.three);
@@ -535,7 +580,7 @@ public class VisitorImpl implements Visitor {
                         } catch (Exception e){
                             methodCall.setType(new NoType());
                             Program.addError(
-                                    "line:" + methodCall.getLineNum() +
+                                    "Line:" + methodCall.getLineNum() +
                                             ":class " + className + " is not declared"
                                     , PhaseNum.three);
                         }
@@ -552,7 +597,7 @@ public class VisitorImpl implements Visitor {
                     // WTF!
                 }
                 Program.addError(
-                        "line:" + methodCall.getMethodName().getLineNum() +
+                        "Line:" + methodCall.getMethodName().getLineNum() +
                                 ":variable " + instanceVarName +
                                 " is not declared"
                         , PhaseNum.three);
@@ -561,28 +606,45 @@ public class VisitorImpl implements Visitor {
         }
         else if(instance instanceof This){
             String className = Program.currentClass;
+//            if(className)
             try {
                 ClassDeclaration classObj = Program.getClass(className);
                 setMethodType(methodCall, methodName, instance, className, classObj);
+                ArrayList<Type> methodArgsType = classObj.getMethodArgsType(methodName);
+                ArrayList<Type> methodCallArgsType = new ArrayList<>();
+                for(Expression arg : methodCall.getArgs())
+                    methodCallArgsType.add(arg.getType());
+                checkForArgs(methodArgsType, methodCallArgsType, methodName, methodCall.getLineNum());
             } catch (Exception e) {
-                e.printStackTrace();
+                if(Program.isMainClass(className)){
+                    methodCall.setType(new NoType());
+                    Program.addError(
+                            "Line:"+methodCall.getLineNum()+":usage of this keyword in Main class is forbidden.",
+                            PhaseNum.three
+                    );
+                } else
+                    e.printStackTrace();
             }
         }
         else if(instance instanceof MethodCall){
             String instanceTypeName = instance.getType().toString();
             if(Program.isPrimitiveType(instanceTypeName)){
                 Program.addError(
-                        "line:"+instance.getLineNum()+":methods are not allowed on "+instanceTypeName,
+                        "Line:"+instance.getLineNum()+":methods are not allowed on "+instanceTypeName,
                         PhaseNum.three
                 );
             } else {
                 try {
-                    ClassDeclaration instanceClass = Program.getClass(instanceTypeName);
-                    setMethodType(methodCall, methodName, instance, instanceTypeName, instanceClass);
                     ClassDeclaration classDeclaration = Program.getClass(instanceTypeName);
+                    setMethodType(methodCall, methodName, instance, instanceTypeName, classDeclaration);
+                    ArrayList<Type> methodArgsType = classDeclaration.getMethodArgsType(methodName);
+                    ArrayList<Type> methodCallArgsType = new ArrayList<>();
+                    for(Expression arg : methodCall.getArgs())
+                        methodCallArgsType.add(arg.getType());
+                    checkForArgs(methodArgsType, methodCallArgsType, methodName, methodCall.getLineNum());
                     if (!isMethodInClass(classDeclaration, methodName)){
                         Program.addError(
-                                "line:" + instance.getLineNum() +
+                                "Line:" + instance.getLineNum() +
                                         ":there is no method named " + methodName +
                                         " in class " + instanceTypeName,
                                 PhaseNum.three
@@ -599,10 +661,10 @@ public class VisitorImpl implements Visitor {
         try{
             Type returnType = classObj.getMethodReturnType(methodName);
             methodCall.setType(returnType);
-        } catch (Exception e){
+        } catch (MethodNotFoundException e){
             //method not found :shrug:
             Program.addError(
-                    "line:" + instance.getLineNum() +
+                    "Line:" + instance.getLineNum() +
                             ":there is no method named " + methodName +
                             " in class " + className,
                     PhaseNum.three
@@ -617,7 +679,7 @@ public class VisitorImpl implements Visitor {
         if(arraySize <= 0) {
             Program.invalidate();
             Program.addError(
-                "line:" + newArray.getLineNum() +
+                "Line:" + newArray.getLineNum() +
                         ":array length should not be zero or negative"
             , PhaseNum.two);
             ((IntValue)newArray.getExpression()).setConstant(0); // default value to 0 (?!)
@@ -640,7 +702,7 @@ public class VisitorImpl implements Visitor {
             newClass.setType(new UserDefinedType(className));
         } catch (Exception e){
             Program.addError(
-                    "line:"+newClass.getLineNum()+":class "+className.getName()+" is not declared",
+                    "Line:"+newClass.getLineNum()+":class "+className.getName()+" is not declared",
                     PhaseNum.three
             );
             newClass.setType(new NoType());
@@ -669,7 +731,7 @@ public class VisitorImpl implements Visitor {
             unaryExpression.setType(new NoType());
             if(!(value.getType() instanceof NoType))
                 Program.addError(
-                        "line:"+unaryExpression.getLineNum()+":unsupported operand type for "+unaryExpression.getUnaryOperator(),
+                        "Line:"+unaryExpression.getLineNum()+":unsupported operand type for "+unaryExpression.getUnaryOperator(),
                         PhaseNum.three
                 );
         }
@@ -705,14 +767,14 @@ public class VisitorImpl implements Visitor {
 
         if(!isCompatibleForAssignment(lvalue, rvalue)) {
             Program.addError(
-                    "line:"+assign.getLineNum()+":unsupported operand type for "+BinaryOperator.OperatorTypes.assign,
+                    "Line:"+assign.getLineNum()+":unsupported operand type for "+BinaryOperator.OperatorTypes.assign,
                     PhaseNum.three
             );
         }
 
         else if (!lvalue.isLvalue()) {
 			Program.addError(
-					"line:"+assign.getLineNum()+":left side of assignment must be a valid lvalue",
+					"Line:"+assign.getLineNum()+":left side of assignment must be a valid lvalue",
 					PhaseNum.three
 			);
 		}
@@ -729,11 +791,11 @@ public class VisitorImpl implements Visitor {
     private void checkForWrongCondition(Statement statement, Expression condition){
         if(condition instanceof BinaryExpression){
             if(!BinaryOperator.isBooleanOperator(((BinaryExpression) condition).getBinaryOperator())) Program.addError(
-                    "line:" + statement.getLineNum() + ":condition type must be boolean"
+                    "Line:" + statement.getLineNum() + ":condition type must be boolean"
                     , PhaseNum.three);
         }
         else if(!(condition instanceof BooleanValue)) Program.addError(
-                "line:" + statement.getLineNum() + ":condition type must be boolean"
+                "Line:" + statement.getLineNum() + ":condition type must be boolean"
                 , PhaseNum.three
         );
     }
@@ -744,21 +806,77 @@ public class VisitorImpl implements Visitor {
 		Expression condition = conditional.getExpression();
         condition.accept(this);
         checkForWrongCondition(conditional, condition);
-        /* TODO: if has errors, change type of condition? */
         conditional.getConsequenceBody().accept(this);
         if(conditional.hasAlternativeBody())
            conditional.getAlternativeBody().accept(this);
     }
 
     @Override
-    public void visit(MethodCallInMain methodCallInMain) {
-        System.out.println("VISITING METHOD CALL IN MAIN");
-        methodCallInMain.getInstance().accept(this);
-        methodCallInMain.getMethodName().accept(this);
-        for(Expression arg : methodCallInMain.getArgs()){
+    public void visit(MethodCallInMain methodCall) {
+        Program.addMessage(methodCall.toString());
+        Expression instance = methodCall.getInstance();
+        instance.accept(this);
+        methodCall.getMethodName().accept(this, 1);
+        for(Expression arg : methodCall.getArgs())
             arg.accept(this);
+        String methodName = methodCall.getMethodName().getName();
+        if(instance instanceof MethodCall){
+            String instanceTypeName = instance.getType().toString();
+            if(Program.isPrimitiveType(instanceTypeName)){
+                Program.addError(
+                        "Line:"+instance.getLineNum()+":methods are not allowed on "+instanceTypeName,
+                        PhaseNum.three
+                );
+            } else {
+                try {
+                    ClassDeclaration classDeclaration = Program.getClass(instanceTypeName);
+                    ArrayList<Type> methodArgsType = classDeclaration.getMethodArgsType(methodName);
+                    ArrayList<Type> methodCallArgsType = new ArrayList<>();
+                    for(Expression arg : methodCall.getArgs())
+                        methodCallArgsType.add(arg.getType());
+                    checkForArgs(methodArgsType, methodCallArgsType, methodName, methodCall.getLineNum());
+                    if (!isMethodInClass(classDeclaration, methodName)){
+                        Program.addError(
+                                "Line:" + instance.getLineNum() +
+                                        ":there is no method named " + methodName +
+                                        " in class " + instanceTypeName,
+                                PhaseNum.three
+                        );
+                    }
+                } catch (Exception e){
+                    // It's handled in visiting MethodDeclaration
+                }
+            }
         }
-        //TODO: implement appropriate visit functionality
+        else if(instance instanceof This){
+            Program.addError(
+                    "Line:"+methodCall.getLineNum()+":usage of this keyword in Main class is forbidden.",
+                    PhaseNum.three
+            );
+        }
+        else if(instance instanceof NewClass){
+            String className = ((NewClass) instance).getClassName().getName();
+            try {
+                ClassDeclaration classDeclaration = Program.getClass(className);
+                ArrayList<Type> methodArgsType = classDeclaration.getMethodArgsType(methodName);
+                ArrayList<Type> methodCallArgsType = new ArrayList<>();
+                for(Expression arg : methodCall.getArgs())
+                    methodCallArgsType.add(arg.getType());
+                checkForArgs(methodArgsType, methodCallArgsType, methodName, methodCall.getLineNum());
+                if (!isMethodInClass(classDeclaration, methodName)) {
+                    Program.addError(
+                            "Line:" + ((NewClass) instance).getClassName().getLineNum() +
+                                    ":there is no method named " + methodName +
+                                    " in class " + className
+                            , PhaseNum.three);
+                }
+            } catch (Exception e){
+                Program.addError(
+                        "Line:" + methodCall.getLineNum() +
+                                ":class " + className + " is not declared"
+                        , PhaseNum.three);
+            }
+        }
     }
 
     @Override
@@ -767,9 +885,7 @@ public class VisitorImpl implements Visitor {
         Expression condition = loop.getCondition();
         condition.accept(this);
         checkForWrongCondition(loop, condition);
-
-        //TODO: if has errors, change type of condition?
-		loop.getBody().accept(this);
+        loop.getBody().accept(this);
     }
 
     @Override
@@ -780,7 +896,7 @@ public class VisitorImpl implements Visitor {
         if(!Program.doesWritelnSupport(argument)){
             argument.setType(new NoType());
             Program.addError(
-                    "line:"+write.getLineNum()+":unsupported type for writeln",
+                    "Line:"+write.getLineNum()+":unsupported type for writeln",
                     PhaseNum.three
             );
         }

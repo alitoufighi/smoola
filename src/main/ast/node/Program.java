@@ -59,7 +59,7 @@ public class Program {
         		if (c.hasParent())
 					classTable.getValue().setPre(classesSymbolTable.get(
 							classes.get(classTable.getKey()).getParentName().getName()));
-        		else{
+        		else if(!c.getName().getName().equals("Object")){
         		    classTable.getValue().setPre(classesSymbolTable.get(
         		            classes.get("Object").getName().getName()
                     ));

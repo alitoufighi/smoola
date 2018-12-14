@@ -21,7 +21,7 @@ public class Program {
     private static int tempVars = 0;
     public static int passNum = 1;
     private static LinkedHashMap<String, ClassDeclaration> classes = new LinkedHashMap<>();
-    private ClassDeclaration mainClass;
+    private static ClassDeclaration mainClass;
     private static ArrayList<String> messages = new ArrayList<>();
     private static ArrayList<String> errorsPhase2 = new ArrayList<>();
     private static ArrayList<String> errorsPhase3 = new ArrayList<>();
@@ -51,6 +51,10 @@ public class Program {
             errors.add(error);
     }
 
+    public static boolean isMainClass(String name){
+        return mainClass.getName().getName().equals(name);
+    }
+
     public void createClassSymbolTableHierarchy() {
         for (HashMap.Entry<String, SymbolTable> classTable : classesSymbolTable.entrySet()) {
 			ClassDeclaration c;
@@ -78,7 +82,7 @@ public class Program {
 //
 //            if(!classes.containsKey(parent.getParentName().getName())){
 //                Program.addError(
-//                        "line:" + parent.getLineNum() +
+//                        "Line:" + parent.getLineNum() +
 //                                ":class " + parent.getParentName().getName() + " is not declared"
 //                        , PhaseNum.three);
 //                break;
@@ -101,7 +105,7 @@ public class Program {
 //                                Program.invalidate();
 //
 //                                Program.addError(
-//                                    "line:" + var.getLineNum() +
+//                                    "Line:" + var.getLineNum() +
 //                                            ":Redefinition of variable " + name
 //                                    , PhaseNum.two);
 //                                break;
@@ -112,7 +116,7 @@ public class Program {
 //                        for(MethodDeclaration method : current.getMethodDeclarations())
 //                            if (method.getName().getName().equals(name)) {
 //                                Program.addError(
-//                                        "line:" + method.getLineNum() +
+//                                        "Line:" + method.getLineNum() +
 //                                                ":Redefinition of method " + name
 //                                        , PhaseNum.two);
 //                                break;
@@ -162,7 +166,7 @@ public class Program {
             Program.invalidate();
 
             Program.addError(
-                "line:" + classDeclaration.getLineNum() +
+                "Line:" + classDeclaration.getLineNum() +
                         ":Redefinition of class " + className
                     , PhaseNum.two);
             className = "temp" + Program.getNewTempVar() +

@@ -265,7 +265,6 @@ public class VisitorImpl implements Visitor {
             catch (ItemAlreadyExistsException e1){
                 // ?!?
             }
-            Program.invalidate();
             Program.addError(
                 "Line:" + varDeclaration.getLineNum() +
                         ":Redefinition of variable " + name
@@ -666,10 +665,9 @@ public class VisitorImpl implements Visitor {
     public void visit(NewArray newArray) {
         int arraySize = ((IntValue)newArray.getExpression()).getConstant();
         if(arraySize <= 0) {
-            Program.invalidate();
             Program.addError(
                 "Line:" + newArray.getLineNum() +
-                        ":array length should not be zero or negative"
+                        ":Array length should not be zero or negative"
             , PhaseNum.two);
             ((IntValue)newArray.getExpression()).setConstant(0); // default value to 0 (?!)
         }

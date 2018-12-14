@@ -1,5 +1,6 @@
 package ast.node.declaration;
 
+import ast.Type.Type;
 import ast.Visitor;
 import ast.node.expression.Identifier;
 
@@ -17,12 +18,31 @@ public class ClassDeclaration extends Declaration{
         this.lineNum = name.getLineNum();
     }
 
+    public ArrayList<Type> getMethodArgsType(String methodName) throws MethodNotFoundException {
+        ArrayList<Type> result = new ArrayList<>();
+        for(MethodDeclaration methodDeclaration : methodDeclarations)
+            if (methodDeclaration.getName().getName().equals(methodName)){
+                ArrayList<VarDeclaration> args = methodDeclaration.getArgs();
+                for(VarDeclaration arg : args)
+                    result.add(arg.getType());
+                return result;
+            }
+        throw new MethodNotFoundException();
+    }
+
+    public Type getMethodReturnType(String methodName) throws MethodNotFoundException{
+        for(MethodDeclaration methodDeclaration : methodDeclarations)
+            if (methodDeclaration.getName().getName().equals(methodName))
+                return methodDeclaration.getReturnType();
+        throw new MethodNotFoundException();
+    }
+
     public Identifier getName() {
         return name;
     }
 
     public boolean hasParent() {
-        return (parentName != null && parentName.getName() != null);
+        return (parentName != null && parentName.getName() != null && !parentName.getName().equals("Object"));
     }
 
     public void setName(Identifier name) {

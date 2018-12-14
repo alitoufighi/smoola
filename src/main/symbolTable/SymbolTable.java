@@ -1,6 +1,8 @@
 package symbolTable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 public class SymbolTable {
 
@@ -20,6 +22,16 @@ public class SymbolTable {
 		top = symbolTable;
 	}
 
+	// replaces variable item in top symbol table (should only do once :D) (place a boolean for shadowed, in var dec?
+	public void shadowVariable(String name, SymbolTableVariableItem item){
+		items.remove(name+"@var");
+		try {
+			put(item);
+		} catch (ItemAlreadyExistsException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public HashMap<String, SymbolTableItem> getItems() { return items; }
 
 	// Use it in pass1 scope end
@@ -33,18 +45,29 @@ public class SymbolTable {
 		pre = null;
 	}
 
-	// this is a copy constructor
+	// this is not a copy constructor anymore
 	public SymbolTable(SymbolTable st){
-		this.pre = st.pre;
+		this.pre = st;
         this.items = new HashMap<>();
-        for(Map.Entry<String, SymbolTableItem> entry : st.items.entrySet())
-            items.put(entry.getKey(), entry.getValue());
 	}
 
-//	public SymbolTable(SymbolTable pre) {
-//		this.pre = pre;
-//		this.items = new HashMap<String, SymbolTableItem>();
-//	}
+	// used in pass 1
+	public String getClassNameInClassScope() throws NotInClassScopeException {
+		ArrayList<SymbolTableItem> items = new ArrayList<>();
+
+		for(Map.Entry<String, SymbolTableItem> entry : this.items.entrySet()){
+			if(entry.getValue() instanceof SymbolTableClassItem)
+				items.add(entry.getValue());
+		}
+		if(items.size() != 1){ //TODO: CHECK
+			throw new NotInClassScopeException();
+		}
+		return items.get(0).getName();
+	}
+
+	public void setPre(SymbolTable pre) {
+		this.pre = pre;
+	}
 
 	public void put(SymbolTableItem item) throws ItemAlreadyExistsException {
 		if(items.containsKey(item.getKey()))

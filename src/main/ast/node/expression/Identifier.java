@@ -26,4 +26,8 @@ public class Identifier extends Expression {
     public void accept(Visitor visitor) {
         visitor.visit(this);
     }
+
+    public void accept(Visitor visitor, int mode){
+        visitor.visit(this, mode);
+    }
 }

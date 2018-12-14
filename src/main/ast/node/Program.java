@@ -1,14 +1,19 @@
 package ast.node;
 
+import ast.Type.ArrayType.ArrayType;
+import ast.Type.NoType;
+import ast.Type.PrimitiveType.IntType;
+import ast.Type.PrimitiveType.StringType;
+import ast.Type.Type;
 import ast.Visitor;
 import ast.node.declaration.ClassDeclaration;
-import ast.node.declaration.MethodDeclaration;
-import ast.node.declaration.VarDeclaration;
-import symbolTable.ItemAlreadyExistsException;
+import ast.node.expression.Expression;
 import symbolTable.SymbolTable;
-import symbolTable.SymbolTableItem;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 
 public class Program {
@@ -16,11 +21,12 @@ public class Program {
     private static int tempVars = 0;
     public static int passNum = 1;
     private static LinkedHashMap<String, ClassDeclaration> classes = new LinkedHashMap<>();
-    private ClassDeclaration mainClass;
+    private static ClassDeclaration mainClass;
     private static ArrayList<String> messages = new ArrayList<>();
     private static ArrayList<String> errorsPhase2 = new ArrayList<>();
     private static ArrayList<String> errorsPhase3 = new ArrayList<>();
     private static HashMap<String, SymbolTable> classesSymbolTable = new HashMap<>();
+    public static String currentClass;
 
     public static SymbolTable getClassSymbolTable(String className){
         return classesSymbolTable.get(className);
@@ -34,6 +40,10 @@ public class Program {
         messages.add(msg);
     }
 
+    public static boolean isPrimitiveType(String typeName){
+        return typeName.equals("int") || typeName.equals("int[]") || typeName.equals("string") || typeName.equals("bool");
+    }
+
     public static void addError(String error, PhaseNum phaseNum){
         Program.invalidate();
         ArrayList<String> errors = (phaseNum == PhaseNum.two) ? errorsPhase2 : errorsPhase3;
@@ -41,60 +51,85 @@ public class Program {
             errors.add(error);
     }
 
-    public static void addSymbolTableItems(SymbolTable symbolTable, ClassDeclaration current){
-        ClassDeclaration parent = current;
+    public static boolean isMainClass(String name){
+        return mainClass.getName().getName().equals(name);
+    }
 
-        while(parent.hasParent()){
-
-            if(!classes.containsKey(parent.getParentName().getName())){
-                Program.invalidate();
-                Program.addError(
-                        "line:" + parent.getLineNum() +
-                                ":class " + parent.getParentName().getName() + " is not declared"
-                        , PhaseNum.three);
-                break;
-            }
-
-            parent = classes.get(parent.getParentName().getName());
-            HashMap<String, SymbolTableItem> items = classesSymbolTable.get(parent.getName().getName()).getItems();
-            for(Map.Entry<String, SymbolTableItem> entry : items.entrySet()){
-                try{
-                    symbolTable.put(entry.getValue());
+    public void createClassSymbolTableHierarchy() {
+        for (HashMap.Entry<String, SymbolTable> classTable : classesSymbolTable.entrySet()) {
+			ClassDeclaration c;
+        	try {
+        		c = classes.get(classTable.getKey());
+        		if (c.hasParent())
+					classTable.getValue().setPre(classesSymbolTable.get(
+							classes.get(classTable.getKey()).getParentName().getName()));
+        		else if(!c.getName().getName().equals("Object")){
+        		    classTable.getValue().setPre(classesSymbolTable.get(
+        		            classes.get("Object").getName().getName()
+                    ));
                 }
-                catch (ItemAlreadyExistsException e){
-                    String key = entry.getKey();
-                    String[] tokens = key.split("@");
-                    String name = tokens[0];
-                    String type = tokens[1];
-                    if(type.equals("var")){
-                        for(VarDeclaration var : current.getVarDeclarations()) {
-                            if (var.getIdentifier().getName().equals(name)) {
-                                Program.invalidate();
 
-                                Program.addError(
-                                    "line:" + var.getLineNum() +
-                                            ":Redefinition of variable " + name
-                                    , PhaseNum.two);
-                                break;
-                            }
-                        }
-                    }
-                    else if(type.equals("method")){
-                        for(MethodDeclaration method : current.getMethodDeclarations()) {
-                            if (method.getName().getName().equals(name)) {
-                                Program.invalidate();
+			} catch(Exception e) {
+        		return;
+			}
+		}
+    }
 
-                                Program.addError(
-                                    "line:" + method.getLineNum() +
-                                            ":Redefinition of method " + name
-                                    , PhaseNum.two);
-                                break;
-                            }
-                        }
-                    }
-                }
-            }
-        }
+//    public static void addSymbolTableItems(SymbolTable symbolTable, ClassDeclaration current){
+//        ClassDeclaration parent = current;
+//
+//        while(parent.hasParent()){
+//
+//            if(!classes.containsKey(parent.getParentName().getName())){
+//                Program.addError(
+//                        "Line:" + parent.getLineNum() +
+//                                ":class " + parent.getParentName().getName() + " is not declared"
+//                        , PhaseNum.three);
+//                break;
+//            }
+//
+//            parent = classes.get(parent.getParentName().getName());
+//            HashMap<String, SymbolTableItem> items = classesSymbolTable.get(parent.getName().getName()).getItems();
+//            for(Map.Entry<String, SymbolTableItem> entry : items.entrySet()){
+//                try{
+//                    symbolTable.put(entry.getValue());
+//                }
+//                catch (ItemAlreadyExistsException e){
+//                    String key = entry.getKey();
+//                    String[] tokens = key.split("@");
+//                    String name = tokens[0];
+//                    String type = tokens[1];
+//                    if(type.equals("var")){
+//                        for(VarDeclaration var : current.getVarDeclarations()) {
+//                            if (var.getIdentifier().getName().equals(name)) {
+//                                Program.invalidate();
+//
+//                                Program.addError(
+//                                    "Line:" + var.getLineNum() +
+//                                            ":Redefinition of variable " + name
+//                                    , PhaseNum.two);
+//                                break;
+//                            }
+//                        }
+//                    }
+//                    else if(type.equals("method")){
+//                        for(MethodDeclaration method : current.getMethodDeclarations())
+//                            if (method.getName().getName().equals(name)) {
+//                                Program.addError(
+//                                        "Line:" + method.getLineNum() +
+//                                                ":Redefinition of method " + name
+//                                        , PhaseNum.two);
+//                                break;
+//                            }
+//                    }
+//                }
+//            }
+//        }
+//    }
+
+    public static boolean doesWritelnSupport(Expression argument) {
+        Type type = argument.getType();
+        return type instanceof StringType || type instanceof IntType || type instanceof ArrayType || type instanceof NoType;
     }
 
     public void printErrors(PhaseNum phaseNum){
@@ -131,7 +166,7 @@ public class Program {
             Program.invalidate();
 
             Program.addError(
-                "line:" + classDeclaration.getLineNum() +
+                "Line:" + classDeclaration.getLineNum() +
                         ":Redefinition of class " + className
                     , PhaseNum.two);
             className = "temp" + Program.getNewTempVar() +

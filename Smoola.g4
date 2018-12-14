@@ -22,22 +22,14 @@ grammar Smoola;
     import ast.node.expression.BinaryOperator.OperatorTypes;
 }
 
-    program:
-        { Program program = new Program(); }
-        y = mainClass { program.setMainClass($y.c); } ( x = classDeclaration { program.addClass($x.c); } )* EOF
-        {
-            VisitorImpl visitor = new VisitorImpl();
-            program.accept(visitor);
-            if(program.isValid())
-                program.printMessages();
-            else
-                program.printErrors(PhaseNum.three);
-        }
+    program returns [Program p]:
+        { $p = new Program(); }
+        y = mainClass { $p.setMainClass($y.c); } ( x = classDeclaration { $p.addClass($x.c); } )* EOF
     ;
 
     mainClass returns [ClassDeclaration c]:
         // name should be checked later
-        'class' class_name = ID '{' 'def' method_name = ID '(' ')' ':' 'int' '{' st = statements 'return' rv = expression ';' '}' '}'
+        'class' class_name = ID '{' 'def' method_name = ID '(' ')' ':' 'int' '{' st = mainStatements 'return' rv = expression ';' '}' '}'
         {
             String classname = $class_name.getText();
             String parentname = null;
@@ -73,7 +65,7 @@ grammar Smoola;
             String parentname = (has_parent) ? $pname.getText() : null;
             $c = new ClassDeclaration(
                 new Identifier(classname, $name.getLine()),
-                (has_parent)? new Identifier(parentname, $pname.getLine()) : null
+                (has_parent)? new Identifier(parentname, $pname.getLine()) : new Identifier("Object", 0)
             );
         }
         '{'
@@ -128,6 +120,46 @@ grammar Smoola;
         '}'
     ;
 
+    mainStatements returns [ArrayList<Statement> stmts]:
+        { $stmts = new ArrayList<Statement>(); }
+        (
+            stm = mainStatement { $stmts.add($stm.stm); }
+        )*
+    ;
+
+    mainStatement returns [Statement stm]:
+            blk = statementBlock { $stm = $blk.blk; }
+            |
+            cond = statementCondition { $stm = $cond.cond; }
+            |
+            loop = statementLoop { $stm = $loop.loop; }
+            |
+            write = statementWrite { $stm = $write.write; }
+            |
+            assign = mainStatementAssignment { $stm = $assign.stm; }
+        ;
+
+    mainStatementAssignment returns [Statement stm]:
+        exp = expression semicolon = ';'
+        {
+            if ($exp.exp instanceof BinaryExpression &&
+                ((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.OperatorTypes.assign)
+                    $stm = new Assign(((BinaryExpression)$exp.exp).getLeft(), ((BinaryExpression)$exp.exp).getRight());
+            else if($exp.exp instanceof MethodCall){
+                $stm = new MethodCallInMain(((MethodCall)$exp.exp).getInstance(), ((MethodCall)$exp.exp).getMethodName());
+                ((MethodCallInMain)$stm).setArgs(((MethodCall)$exp.exp).getArgs());
+                $stm.setLineNum($semicolon.getLine());
+            } else {
+                $stm = new DummyStatement($semicolon.getLine());
+            }
+        }
+    ;
+
+    methodCall returns [Statement stm]:
+        { Expression exp; }
+        'new' name = ID { exp = new NewClass(new Identifier($name.getText(), $name.getLine())); }'(' ')' expressionMethodsTemp[exp]
+    ;
+
     statements returns [ArrayList<Statement> stmts]:
         { $stmts = new ArrayList<Statement>(); }
         ( stm = statement { $stmts.add($stm.stm); })*
@@ -170,14 +202,13 @@ grammar Smoola;
     ;
 
     statementAssignment returns [Statement assign]:
-        exp = expression ';'
+        exp = expression semicolon = ';'
         {
-            if ($exp.exp instanceof BinaryExpression) {
-                if (((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.OperatorTypes.assign)
+            if ($exp.exp instanceof BinaryExpression &&
+                ((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.OperatorTypes.assign)
                     $assign = new Assign(((BinaryExpression)$exp.exp).getLeft(), ((BinaryExpression)$exp.exp).getRight());
-            }
             else
-                print("Error");
+                $assign = new DummyStatement($semicolon.getLine());
         }
     ;
 
@@ -279,7 +310,7 @@ grammar Smoola;
 
     expressionUnary returns [Expression exp]:
         { UnaryOperator unaryOperator; }
-		('!' { unaryOperator = UnaryOperator.not; } | '-' { unaryOperator = UnaryOperator.not; }) value = expressionUnary
+		('!' { unaryOperator = UnaryOperator.not; } | '-' { unaryOperator = UnaryOperator.minus; }) value = expressionUnary
 		{ $exp = new UnaryExpression(unaryOperator, $value.exp); }
 	    |	expMem = expressionMem
 	    { $exp = $expMem.exp; }

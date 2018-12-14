@@ -29,7 +29,7 @@ grammar Smoola;
 
     mainClass returns [ClassDeclaration c]:
         // name should be checked later
-        'class' class_name = ID '{' 'def' method_name = ID '(' ')' ':' 'int' '{' st = statements 'return' rv = expression ';' '}' '}'
+        'class' class_name = ID '{' 'def' method_name = ID '(' ')' ':' 'int' '{' st = mainStatements 'return' rv = expression ';' '}' '}'
         {
             String classname = $class_name.getText();
             String parentname = null;
@@ -120,6 +120,44 @@ grammar Smoola;
         '}'
     ;
 
+    mainStatements returns [ArrayList<Statement> stmts]:
+        { $stmts = new ArrayList<Statement>(); }
+        (
+            stm = mainStatement { $stmts.add($stm.stm); }
+        )*
+    ;
+
+    mainStatement returns [Statement stm]:
+            blk = statementBlock { $stm = $blk.blk; }
+            |
+            cond = statementCondition { $stm = $cond.cond; }
+            |
+            loop = statementLoop { $stm = $loop.loop; }
+            |
+            write = statementWrite { $stm = $write.write; }
+            |
+            assign = mainStatementAssignment { $stm = $assign.stm; }
+        ;
+
+    mainStatementAssignment returns [Statement stm]:
+        exp = expression semicolon = ';'
+        {
+            if ($exp.exp instanceof BinaryExpression &&
+                ((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.OperatorTypes.assign)
+                    $stm = new Assign(((BinaryExpression)$exp.exp).getLeft(), ((BinaryExpression)$exp.exp).getRight());
+            else if($exp.exp instanceof MethodCall){
+                $stm = new MethodCallInMain(((MethodCall)$exp.exp).getInstance(), ((MethodCall)$exp.exp).getMethodName());
+            } else {
+                $stm = new DummyStatement($semicolon.getLine());
+            }
+        }
+    ;
+
+    methodCall returns [Statement stm]:
+        { Expression exp; }
+        'new' name = ID { exp = new NewClass(new Identifier($name.getText(), $name.getLine())); }'(' ')' expressionMethodsTemp[exp]
+    ;
+
     statements returns [ArrayList<Statement> stmts]:
         { $stmts = new ArrayList<Statement>(); }
         ( stm = statement { $stmts.add($stm.stm); })*
@@ -164,12 +202,11 @@ grammar Smoola;
     statementAssignment returns [Statement assign]:
         exp = expression semicolon = ';'
         {
-            if ($exp.exp instanceof BinaryExpression) {
-                if (((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.OperatorTypes.assign)
+            if ($exp.exp instanceof BinaryExpression &&
+                ((BinaryExpression)$exp.exp).getBinaryOperator() == BinaryOperator.OperatorTypes.assign)
                     $assign = new Assign(((BinaryExpression)$exp.exp).getLeft(), ((BinaryExpression)$exp.exp).getRight());
-            }
             else
-                print("Error at line "+ $semicolon.getLine());
+                $assign = new DummyStatement($semicolon.getLine());
         }
     ;
 

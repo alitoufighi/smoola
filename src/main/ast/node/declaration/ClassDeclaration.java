@@ -18,11 +18,23 @@ public class ClassDeclaration extends Declaration{
         this.lineNum = name.getLineNum();
     }
 
-    public Type getMethodReturnType(String methodName) throws Exception{
+    public ArrayList<Type> getMethodArgsType(String methodName) throws MethodNotFoundException {
+        ArrayList<Type> result = new ArrayList<>();
+        for(MethodDeclaration methodDeclaration : methodDeclarations)
+            if (methodDeclaration.getName().getName().equals(methodName)){
+                ArrayList<VarDeclaration> args = methodDeclaration.getArgs();
+                for(VarDeclaration arg : args)
+                    result.add(arg.getType());
+                return result;
+            }
+        throw new MethodNotFoundException();
+    }
+
+    public Type getMethodReturnType(String methodName) throws MethodNotFoundException{
         for(MethodDeclaration methodDeclaration : methodDeclarations)
             if (methodDeclaration.getName().getName().equals(methodName))
                 return methodDeclaration.getReturnType();
-        throw new Exception();
+        throw new MethodNotFoundException();
     }
 
     public Identifier getName() {

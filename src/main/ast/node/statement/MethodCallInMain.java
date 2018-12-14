@@ -37,6 +37,10 @@ public class MethodCallInMain extends Statement {
         return args;
     }
 
+    public void setArgs(ArrayList<Expression> args) {
+        this.args = args;
+    }
+
     public void addArg(Expression arg) {
         this.args.add(arg);
     }

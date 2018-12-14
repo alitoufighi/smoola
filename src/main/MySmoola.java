@@ -7,7 +7,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 
 import java.io.IOException;
 
-public class Main {
+public class MySmoola {
 	public static void main(String[] args) throws IOException {
 		CharStream reader = CharStreams.fromFileName(args[0]);
 		SmoolaLexer lexer = new SmoolaLexer(reader);   // SmoolaLexer in your project

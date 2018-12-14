@@ -17,9 +17,12 @@ public class MySmoola {
 
 		VisitorImpl visitor = new VisitorImpl();
 		p.accept(visitor);
-		if(p.isValid())
-			p.printMessages();
-		else
+
+		if(!p.isValid(PhaseNum.two))
+			p.printErrors(PhaseNum.two);
+		else if(!p.isValid(PhaseNum.three))
 			p.printErrors(PhaseNum.three);
+		else
+			p.printMessages();
 	}
 }

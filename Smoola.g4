@@ -147,6 +147,8 @@ grammar Smoola;
                     $stm = new Assign(((BinaryExpression)$exp.exp).getLeft(), ((BinaryExpression)$exp.exp).getRight());
             else if($exp.exp instanceof MethodCall){
                 $stm = new MethodCallInMain(((MethodCall)$exp.exp).getInstance(), ((MethodCall)$exp.exp).getMethodName());
+                ((MethodCallInMain)$stm).setArgs(((MethodCall)$exp.exp).getArgs());
+                $stm.setLineNum($semicolon.getLine());
             } else {
                 $stm = new DummyStatement($semicolon.getLine());
             }

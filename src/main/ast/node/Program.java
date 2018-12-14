@@ -17,7 +17,8 @@ import java.util.LinkedHashMap;
 
 
 public class Program {
-    private static boolean valid = true;
+    private static boolean phaseTwoValid = true;
+    private static boolean phaseThreeValid = true;
     private static int tempVars = 0;
     public static int passNum = 1;
     private static LinkedHashMap<String, ClassDeclaration> classes = new LinkedHashMap<>();
@@ -45,7 +46,7 @@ public class Program {
     }
 
     public static void addError(String error, PhaseNum phaseNum){
-        Program.invalidate();
+        Program.invalidate(phaseNum);
         ArrayList<String> errors = (phaseNum == PhaseNum.two) ? errorsPhase2 : errorsPhase3;
         if(!errors.contains(error))
             errors.add(error);
@@ -148,23 +149,26 @@ public class Program {
         return ++tempVars;
     }
 
-    public static void invalidate() { valid = false; }
+    private static void invalidate(PhaseNum phaseNum) {
+        if(phaseNum == PhaseNum.two)
+            phaseTwoValid = false;
+        phaseThreeValid = false;
+        // if phase 2 is invalid, then phase 3 is invalid, too!
+    }
 
-    public boolean isValid() { return valid; }
+    public boolean isValid(PhaseNum phaseNum) { return phaseNum == PhaseNum.two ? phaseTwoValid : phaseThreeValid; }
 
     public ClassDeclaration getMainClass() {
         return mainClass;
     }
 
-    public void setMainClass(ClassDeclaration mainClass) {
-        this.mainClass = mainClass;
+    public void setMainClass(ClassDeclaration newMainClass) {
+        mainClass = newMainClass;
     }
 
     public void addClass(ClassDeclaration classDeclaration) {
         String className = classDeclaration.getName().getName();
         if(classes.containsKey(className)){
-            Program.invalidate();
-
             Program.addError(
                 "Line:" + classDeclaration.getLineNum() +
                         ":Redefinition of class " + className

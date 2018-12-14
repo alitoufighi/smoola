@@ -608,13 +608,7 @@ public class VisitorImpl implements Visitor {
             String className = Program.currentClass;
 //            if(className)
             try {
-                ClassDeclaration classObj = Program.getClass(className);
-                setMethodType(methodCall, methodName, instance, className, classObj);
-                ArrayList<Type> methodArgsType = classObj.getMethodArgsType(methodName);
-                ArrayList<Type> methodCallArgsType = new ArrayList<>();
-                for(Expression arg : methodCall.getArgs())
-                    methodCallArgsType.add(arg.getType());
-                checkForArgs(methodArgsType, methodCallArgsType, methodName, methodCall.getLineNum());
+                checkAndSetMethodTypeAndArgs(methodCall, methodName, instance, className);
             } catch (Exception e) {
                 if(Program.isMainClass(className)){
                     methodCall.setType(new NoType());
@@ -635,21 +629,7 @@ public class VisitorImpl implements Visitor {
                 );
             } else {
                 try {
-                    ClassDeclaration classDeclaration = Program.getClass(instanceTypeName);
-                    setMethodType(methodCall, methodName, instance, instanceTypeName, classDeclaration);
-                    ArrayList<Type> methodArgsType = classDeclaration.getMethodArgsType(methodName);
-                    ArrayList<Type> methodCallArgsType = new ArrayList<>();
-                    for(Expression arg : methodCall.getArgs())
-                        methodCallArgsType.add(arg.getType());
-                    checkForArgs(methodArgsType, methodCallArgsType, methodName, methodCall.getLineNum());
-                    if (!isMethodInClass(classDeclaration, methodName)){
-                        Program.addError(
-                                "Line:" + instance.getLineNum() +
-                                        ":there is no method named " + methodName +
-                                        " in class " + instanceTypeName,
-                                PhaseNum.three
-                        );
-                    }
+                    checkAndSetMethodTypeAndArgs(methodCall, methodName, instance, instanceTypeName);
                 } catch (Exception e){
                     // It's handled in visiting MethodDeclaration
                 }
@@ -657,20 +637,29 @@ public class VisitorImpl implements Visitor {
         }
     }
 
-    private void setMethodType(MethodCall methodCall, String methodName, Expression instance, String className, ClassDeclaration classObj) {
+    private void checkAndSetMethodTypeAndArgs(MethodCall methodCall, String methodName, Expression instance, String instanceTypeName) throws Exception {
+        ClassDeclaration classDeclaration = Program.getClass(instanceTypeName);
         try{
-            Type returnType = classObj.getMethodReturnType(methodName);
-            methodCall.setType(returnType);
+            setMethodType(methodCall, methodName, classDeclaration);
+            ArrayList<Type> methodArgsType = classDeclaration.getMethodArgsType(methodName);
+            ArrayList<Type> methodCallArgsType = new ArrayList<>();
+            for(Expression arg : methodCall.getArgs())
+                methodCallArgsType.add(arg.getType());
+            checkForArgs(methodArgsType, methodCallArgsType, methodName, methodCall.getLineNum());
         } catch (MethodNotFoundException e){
-            //method not found :shrug:
             Program.addError(
                     "Line:" + instance.getLineNum() +
                             ":there is no method named " + methodName +
-                            " in class " + className,
+                            " in class " + instanceTypeName,
                     PhaseNum.three
             );
             methodCall.setType(new NoType());
         }
+    }
+
+    private void setMethodType(MethodCall methodCall, String methodName, ClassDeclaration classObj) throws MethodNotFoundException {
+        Type returnType = classObj.getMethodReturnType(methodName);
+        methodCall.setType(returnType);
     }
 
     @Override

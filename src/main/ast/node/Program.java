@@ -29,53 +29,63 @@ public class Program {
     private static HashMap<String, SymbolTable> classesSymbolTable = new HashMap<>();
     public static String currentClass;
 
-    public static SymbolTable getClassSymbolTable(String className){
+    public static SymbolTable getClassSymbolTable(String className) {
         return classesSymbolTable.get(className);
     }
 
-    public static void addClassSymbolTable(String name, SymbolTable st){
+    public static void addClassSymbolTable(String name, SymbolTable st) {
         classesSymbolTable.put(name, st);
     }
 
-    public static void addMessage(String msg){
+    public static void addMessage(String msg) {
         messages.add(msg);
     }
 
-    public static boolean isPrimitiveType(String typeName){
+    public static boolean isPrimitiveType(String typeName) {
         return typeName.equals("int") || typeName.equals("int[]") || typeName.equals("string") || typeName.equals("bool");
     }
 
-    public static void addError(String error, PhaseNum phaseNum){
+    public static void addError(String error, PhaseNum phaseNum) {
         Program.invalidate(phaseNum);
         ArrayList<String> errors = (phaseNum == PhaseNum.two) ? errorsPhase2 : errorsPhase3;
-        if(!errors.contains(error))
+        if (!errors.contains(error))
             errors.add(error);
     }
 
-    public static boolean isMainClass(String name){
+    public static boolean isMainClass(String name) {
         return mainClass.getName().getName().equals(name);
     }
 
     public void createClassSymbolTableHierarchy() {
+//        HashMap<String, String> parentsList = new HashMap<>(); // to prevent circular inheritance!
         for (HashMap.Entry<String, SymbolTable> classTable : classesSymbolTable.entrySet()) {
-			ClassDeclaration c;
-        	try {
-        		c = classes.get(classTable.getKey());
-        		if (c.hasParent()){
-        		    String parentName = classes.get(classTable.getKey()).getParentName().getName();
-        		    if(!parentName.equals(c.getName().getName()))
-                        classTable.getValue().setPre(classesSymbolTable.get(parentName));
-                }
-        		else if(!c.getName().getName().equals("Object")){
-        		    classTable.getValue().setPre(classesSymbolTable.get(
-        		            classes.get("Object").getName().getName()
+            ClassDeclaration c;
+            try {
+                c = classes.get(classTable.getKey());
+                String className = c.getName().getName();
+                if (c.hasParent()) {
+                    String parentName = classes.get(classTable.getKey()).getParentName().getName();
+                    if(checkCircularInheritance(c)){
+                        Program.addError(
+                                "line:" + c.getLineNum() + ":circular inheritance found for classes " +
+                                        className + " and " + parentName,
+                                PhaseNum.three
+                        );
+                    } else {
+//                        parentsList.put(className, parentName);
+                        if (!parentName.equals(c.getName().getName()))
+                            classTable.getValue().setPre(classesSymbolTable.get(parentName));
+                    }
+                } else if (!c.getName().getName().equals("Object")) {
+                    classTable.getValue().setPre(classesSymbolTable.get(
+                            classes.get("Object").getName().getName()
                     ));
                 }
 
-			} catch(Exception e) {
-        		return;
-			}
-		}
+            } catch (Exception e) {
+                return;
+            }
+        }
     }
 
 //    public static void addSymbolTableItems(SymbolTable symbolTable, ClassDeclaration current){
@@ -135,15 +145,15 @@ public class Program {
         return type instanceof StringType || type instanceof IntType || type instanceof ArrayType || type instanceof NoType;
     }
 
-    public void printErrors(PhaseNum phaseNum){
+    public void printErrors(PhaseNum phaseNum) {
         ArrayList<String> errors = (phaseNum == PhaseNum.two) ? errorsPhase2 : errorsPhase3;
         errors.sort(Comparator.comparing(e -> Integer.valueOf(e.split(":")[1])));
-        for(String error : errors)
+        for (String error : errors)
             System.out.println(error);
     }
 
-    public void printMessages(){
-        for(String msg : messages)
+    public void printMessages() {
+        for (String msg : messages)
             System.out.println(msg);
     }
 
@@ -152,13 +162,15 @@ public class Program {
     }
 
     private static void invalidate(PhaseNum phaseNum) {
-        if(phaseNum == PhaseNum.two)
+        if (phaseNum == PhaseNum.two)
             phaseTwoValid = false;
         phaseThreeValid = false;
         // if phase 2 is invalid, then phase 3 is invalid, too!
     }
 
-    public boolean isValid(PhaseNum phaseNum) { return phaseNum == PhaseNum.two ? phaseTwoValid : phaseThreeValid; }
+    public boolean isValid(PhaseNum phaseNum) {
+        return phaseNum == PhaseNum.two ? phaseTwoValid : phaseThreeValid;
+    }
 
     public ClassDeclaration getMainClass() {
         return mainClass;
@@ -170,10 +182,10 @@ public class Program {
 
     public void addClass(ClassDeclaration classDeclaration) {
         String className = classDeclaration.getName().getName();
-        if(classes.containsKey(className)){
+        if (classes.containsKey(className)) {
             Program.addError(
-                "Line:" + classDeclaration.getLineNum() +
-                        ":Redefinition of class " + className
+                    "Line:" + classDeclaration.getLineNum() +
+                            ":Redefinition of class " + className
                     , PhaseNum.two);
             className = "temp" + Program.getNewTempVar() +
                     "-" + className;
@@ -183,7 +195,7 @@ public class Program {
     }
 
     public static ClassDeclaration getClass(String name) throws Exception {
-        if(!classes.containsKey(name))
+        if (!classes.containsKey(name))
             throw new Exception();
         return classes.get(name);
     }
@@ -191,7 +203,7 @@ public class Program {
     public ArrayList<ClassDeclaration> getClasses() {
         ArrayList<ClassDeclaration> tempList = new ArrayList<>();
         for (String str : classes.keySet()) {
-			tempList.add(classes.get(str));
+            tempList.add(classes.get(str));
         }
 
         return tempList;
@@ -206,5 +218,22 @@ public class Program {
         visitor.visit(this);
     }
 
+
+    private boolean checkCircularInheritance(ClassDeclaration c) {
+        String className = c.getName().getName();
+        ArrayList<String> parentsList = new ArrayList<>();
+        if (!className.equals("Object")) {
+            String parentName = c.getParentName().getName();
+            while (!parentName.equals("Object")) {
+                parentsList.add(parentName);
+                ClassDeclaration parent = classes.get(parentName);
+                parentName = parent.getParentName().getName();
+                if (parentsList.contains(parentName))
+                    return true;
+            }
+
+        }
+        return false;
+    }
 
 }

@@ -42,7 +42,7 @@ public class ClassDeclaration extends Declaration{
     }
 
     public boolean hasParent() {
-        return (parentName != null && parentName.getName() != null && !parentName.getName().equals("Object"));
+        return !name.getName().equals("Object");
     }
 
     public void setName(Identifier name) {

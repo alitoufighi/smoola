@@ -33,12 +33,6 @@ public class VisitorImpl implements Visitor {
 		ClassDeclaration Object = new ClassDeclaration(new Identifier("Object", 0), null);
 		program.addClass(Object);
 
-		try{
-            SymbolTable.top.put(new SymbolTableClassItem("Object"));
-        } catch (ItemAlreadyExistsException e) {
-		    // This won't happen
-        }
-
         Program.passNum = 1;
 
         program.getMainClass().accept(this);
@@ -92,18 +86,26 @@ public class VisitorImpl implements Visitor {
         }
         else if (Program.passNum == 2){
             Program.currentClass = classDeclaration.getName().getName();
-            Program.addMessage(classDeclaration.toString());
+            if(!classDeclaration.getName().getName().equals("Object"))
+                Program.addMessage(classDeclaration.toString());
 
             if(classDeclaration.hasParent()){
                 String parentName = classDeclaration.getParentName().getName();
-                try {
-                    SymbolTable.top.get(parentName.concat("@class"));
-                }
-                catch (ItemNotFoundException e){
+                if(parentName.equals(classDeclaration.getName().getName())){
                     Program.addError(
-                        "Line:" + classDeclaration.getLineNum() +
-                                ":class " + parentName + " is not declared"
-                    , PhaseNum.three);
+                            "line:"+classDeclaration.getLineNum()+":a class can't be parent of itself",
+                            PhaseNum.three
+                    );
+                } else {
+                    try {
+                        SymbolTable.top.get(parentName.concat("@class"));
+                    }
+                    catch (ItemNotFoundException e){
+                        Program.addError(
+                                "Line:" + classDeclaration.getLineNum() +
+                                        ":class " + parentName + " is not declared"
+                                , PhaseNum.three);
+                    }
                 }
             }
 
@@ -301,10 +303,12 @@ public class VisitorImpl implements Visitor {
     public void visit(BinaryExpression binaryExpression) {
         Program.addMessage(binaryExpression.toString());
     	Expression left = binaryExpression.getLeft();
+//    	left.accept(this);
     	if(left instanceof Identifier)
     	    ((Identifier) left).accept(this, 2);
     	else left.accept(this);
     	Expression right = binaryExpression.getRight();
+//    	right.accept(this);
         if(right instanceof Identifier)
             ((Identifier) right).accept(this, 2);
         else {
@@ -414,18 +418,55 @@ public class VisitorImpl implements Visitor {
         // mode: 0 class
         // mode: 1 method
         // mode: 2 variable
-//        try{
-//            if(mode == 0) {
-//                SymbolTable.top.get(identifier.getName()+"@class");
-//            } else if(mode == 1)
-//                SymbolTable.top.get(identifier.getName()+"@method");
-//            else if(mode == 2)
-//                SymbolTable.top.get(identifier.getName()+"@var");
+        // mode: 4 not expected to be in top symbol table
+            if (mode == 0) {
+                try{
+                    SymbolTable.top.get(identifier.getName() + "@class");
+                } catch (ItemNotFoundException e){
+                    Program.addError(
+                            "Line:" + identifier.getLineNum() + ":class " + identifier.getName() +
+                                    " is not declared",
+                            PhaseNum.three
+                    );
+                }
+                identifier.setType(new NoType());
+            } else if (mode == 1) {
+                try{
+                    SymbolTable.top.get(identifier.getName() + "@method");
+                } catch (ItemNotFoundException e){
+                    Program.addError(
+                            "Line:" + identifier.getLineNum() + ":there is no method named " + identifier.getName() +
+                                    " in this class",
+                            PhaseNum.three
+                    );
+                }
+                identifier.setType(new NoType());
+            } else if (mode == 2) {
+                try {
+                    SymbolTableItem item = SymbolTable.top.get(identifier.getName() + "@var");
+                    Type type = ((SymbolTableVariableItem) item).getType();
+                    identifier.setType(type);
+                } catch (ItemNotFoundException e) {
+                    identifier.setType(new NoType());
+                    Program.addError(
+                            "Line:" + identifier.getLineNum() + ":variable " + identifier.getName() +
+                                    " is not declared",
+                            PhaseNum.three
+                    );
+                }
+            } else if (mode == 4) {
+                identifier.setType(new NoType());
+            }
 //        } catch (ItemNotFoundException e){
 //            identifier.setType(new NoType());
-//            //NO ERROR MESSAGE ADDING?
+//            System.out.println(identifier.getName());
+//
+//            Program.addError(
+//                    "Line:"+identifier.getLineNum()+":variable "+identifier.getName()+
+//                            " is not declared",
+//                    PhaseNum.three
+//            );
 //        }
-        identifier.setType(new NoType());
     }
 
     @Override
@@ -517,7 +558,7 @@ public class VisitorImpl implements Visitor {
         String methodName = methodCall.getMethodName().getName();
         Expression instance = methodCall.getInstance();
         instance.accept(this); // to fill return types from first
-        methodCall.getMethodName().accept(this, 1);
+        methodCall.getMethodName().accept(this, 4); //not expected to be in top symbol table
         for(Expression arg : methodCall.getArgs())
             arg.accept(this);
 
@@ -686,7 +727,7 @@ public class VisitorImpl implements Visitor {
         Program.addMessage(newClass.toString());
 
 		Identifier className = newClass.getClassName();
-        className.accept(this, 1); //TODO: CLEAN THIS MESS UP!
+        className.accept(this, 0); //TODO: CLEAN THIS MESS UP!
         try{
             Program.getClass(className.getName());
             newClass.setType(new UserDefinedType(className));
@@ -808,7 +849,7 @@ public class VisitorImpl implements Visitor {
         Program.addMessage(methodCall.toString());
         Expression instance = methodCall.getInstance();
         instance.accept(this);
-        methodCall.getMethodName().accept(this, 1);
+        methodCall.getMethodName().accept(this, 4);
         for(Expression arg : methodCall.getArgs())
             arg.accept(this);
         String methodName = methodCall.getMethodName().getName();

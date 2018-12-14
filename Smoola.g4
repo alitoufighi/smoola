@@ -35,7 +35,7 @@ grammar Smoola;
             String parentname = null;
 
             $c = new ClassDeclaration(new Identifier(classname, $class_name.getLine()),
-                new Identifier(parentname, $class_name.getLine())
+                new Identifier("Object", 0)
                 );
             $c.setLineNum($class_name.getLine());
 

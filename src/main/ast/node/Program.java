@@ -61,9 +61,11 @@ public class Program {
 			ClassDeclaration c;
         	try {
         		c = classes.get(classTable.getKey());
-        		if (c.hasParent())
-					classTable.getValue().setPre(classesSymbolTable.get(
-							classes.get(classTable.getKey()).getParentName().getName()));
+        		if (c.hasParent()){
+        		    String parentName = classes.get(classTable.getKey()).getParentName().getName();
+        		    if(!parentName.equals(c.getName().getName()))
+                        classTable.getValue().setPre(classesSymbolTable.get(parentName));
+                }
         		else if(!c.getName().getName().equals("Object")){
         		    classTable.getValue().setPre(classesSymbolTable.get(
         		            classes.get("Object").getName().getName()

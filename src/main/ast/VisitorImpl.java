@@ -409,6 +409,8 @@ public class VisitorImpl implements Visitor {
     // If you're called with this method, you never need to be type checked.
     // Your type is set by other things.
     public void visit(Identifier identifier, int mode){
+        Program.addMessage(identifier.toString());
+        identifier.setLvalue(true); // doesn't affect anything
         // mode: 0 class
         // mode: 1 method
         // mode: 2 variable
@@ -671,10 +673,11 @@ public class VisitorImpl implements Visitor {
             , PhaseNum.two);
             ((IntValue)newArray.getExpression()).setConstant(0); // default value to 0 (?!)
         }
-        else
+        else {
             Program.addMessage(newArray.toString());
-    	newArray.getExpression().accept(this);
-    	newArray.setType(new ArrayType());
+        }
+        newArray.getExpression().accept(this);
+        newArray.setType(new ArrayType());
     	newArray.setLvalue(false);
     }
 
@@ -702,6 +705,7 @@ public class VisitorImpl implements Visitor {
     public void visit(This instance) {
         Program.addMessage(instance.toString());
         instance.setType(new UserDefinedType(new Identifier(Program.currentClass, instance.getLineNum())));
+        instance.setLvalue(false);
     }
 
     @Override
@@ -729,6 +733,7 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(BooleanValue value) {
         Program.addMessage(value.toString());
+        value.setLvalue(false);
     }
 
     @Override

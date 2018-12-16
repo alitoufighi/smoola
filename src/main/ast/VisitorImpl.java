@@ -745,6 +745,7 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(This instance) {
         Program.addMessage(instance.toString());
+        instance.accept(this);
         instance.setType(new UserDefinedType(new Identifier(Program.currentClass, instance.getLineNum())));
         instance.setLvalue(false);
     }
@@ -770,7 +771,7 @@ public class VisitorImpl implements Visitor {
 
         unaryExpression.setLvalue(false);
     }
-//TODO: Atfe Manteqi: && ||
+
     @Override
     public void visit(BooleanValue value) {
         Program.addMessage(value.toString());

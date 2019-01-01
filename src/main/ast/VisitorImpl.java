@@ -19,6 +19,10 @@ import ast.node.expression.Value.StringValue;
 import ast.node.statement.*;
 import symbolTable.*;
 
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 
 public class VisitorImpl implements Visitor {
@@ -47,7 +51,44 @@ public class VisitorImpl implements Visitor {
         for (ClassDeclaration classDeclaration : program.getClasses())
             classDeclaration.accept(this);
 
-		SymbolTable.pop();
+        if ((!program.isValid(PhaseNum.two)) || !program.isValid(PhaseNum.three)) {
+            SymbolTable.pop();
+            return;
+        }
+
+        Program.passNum = 3;
+
+        String outputDirectory = "out/";
+        for (ClassDeclaration classDeclaration : program.getClasses())
+        {
+        	String name = classDeclaration.getName().getName();
+        	if (name.equals("Object"))
+        		continue;
+            System.out.println(classDeclaration.getName().getName());
+            File classFile = new File(outputDirectory + name + ".j");
+			boolean bool = classFile.setWritable(true);
+			if (!bool) {
+				System.out.println("safsdfas");
+			}
+            try {
+                Object obj = classFile.createNewFile();
+                obj = classFile.setWritable(true, true);
+                FileWriter fileWriter = new FileWriter(outputDirectory + name +  ".j");
+
+                fileWriter.write(".class public " + name + "\n");
+                if (classDeclaration.hasParent())
+					fileWriter.write(".super " + classDeclaration.getParentName().getName() + "\n");
+                else
+                	fileWriter.write(".super java/lang/Object\n");
+
+                fileWriter.close();
+            } catch (Exception ex) {
+                System.out.println("Error in creating new instance of file!");
+                return;
+            }
+        }
+
+        SymbolTable.pop();
 	}
 
     @Override

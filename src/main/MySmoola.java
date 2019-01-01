@@ -22,7 +22,8 @@ public class MySmoola {
 			p.printErrors(PhaseNum.two);
 		else if(!p.isValid(PhaseNum.three))
 			p.printErrors(PhaseNum.three);
-		else
-			p.printMessages();
+		// TODO doesn't want to print AST pre-order
+//		else
+//			p.printMessages();
 	}
 }

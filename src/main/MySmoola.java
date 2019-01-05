@@ -1,3 +1,4 @@
+import ast.CodeGeneratorVisitorImpl;
 import ast.VisitorImpl;
 import ast.node.PhaseNum;
 import ast.node.Program;
@@ -16,7 +17,9 @@ public class MySmoola {
 		Program p = parser.program().p; // program is the name of the start rule
 
 		VisitorImpl visitor = new VisitorImpl();
+		CodeGeneratorVisitorImpl codeGeneratorVisitor = new CodeGeneratorVisitorImpl();
 		p.accept(visitor);
+		p.accept(codeGeneratorVisitor);
 
 		if(!p.isValid(PhaseNum.two))
 			p.printErrors(PhaseNum.two);

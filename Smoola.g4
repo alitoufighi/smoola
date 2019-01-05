@@ -37,13 +37,13 @@ grammar Smoola;
             $c = new ClassDeclaration(new Identifier(classname, $class_name.getLine()),
                 new Identifier("Object", 0)
                 );
-            $c.setLineNum($class_name.getLine());
+            $c.setLlineNum($class_name.getLine());
 
             MethodDeclaration mainMethod = new MethodDeclaration(
                 new Identifier($method_name.getText(),
                     $method_name.getLine())
             );
-
+            mainMethod.setMainMethod();
             mainMethod.setReturnValue($rv.exp);
             mainMethod.setReturnType(new IntType());
             mainMethod.setBody($st.stmts);

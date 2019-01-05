@@ -12,6 +12,7 @@ public class ClassDeclaration extends Declaration{
     private ArrayList<VarDeclaration> varDeclarations = new ArrayList<>();
     private ArrayList<MethodDeclaration> methodDeclarations = new ArrayList<>();
 
+
     public ClassDeclaration(Identifier name, Identifier parentName) {
         this.name = name;
         this.parentName = parentName;
@@ -80,5 +81,14 @@ public class ClassDeclaration extends Declaration{
     @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
+    }
+
+    // if we have parent, our parent's object string is our parent's name.
+    // elsewhere, we are Object class and our parent is "java/lang/Object"
+    public String getParentObjectString() {
+        if(this.hasParent()){
+            return parentName.getName();
+        } else
+            return "java/lang/Object";
     }
 }

@@ -186,6 +186,9 @@ public class VisitorImpl implements Visitor {
                         PhaseNum.three
                 );
             }
+
+            methodDeclaration.setSymbolTable(SymbolTable.top);
+
             SymbolTable.pop();
         }
     }

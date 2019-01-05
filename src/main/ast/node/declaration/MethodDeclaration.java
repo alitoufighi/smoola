@@ -5,6 +5,7 @@ import ast.Visitor;
 import ast.node.expression.Expression;
 import ast.node.expression.Identifier;
 import ast.node.statement.Statement;
+import symbolTable.SymbolTable;
 
 import java.util.ArrayList;
 
@@ -15,6 +16,12 @@ public class MethodDeclaration extends Declaration {
     private ArrayList<VarDeclaration> args = new ArrayList<>();
     private ArrayList<VarDeclaration> localVars = new ArrayList<>();
     private ArrayList<Statement> body = new ArrayList<>();
+    private SymbolTable symbolTable;
+    private boolean isMain = false;
+
+    public boolean isMainMethod(){ return this.isMain; }
+    public void setMainMethod() { this.isMain = true; }
+
 
     public MethodDeclaration(Identifier name) {
         this.name = name;
@@ -78,5 +85,13 @@ public class MethodDeclaration extends Declaration {
     @Override
     public void accept(Visitor visitor) {
         visitor.visit(this);
+    }
+
+    public void setSymbolTable(SymbolTable symbolTable) {
+        this.symbolTable = symbolTable;
+    }
+
+    public SymbolTable getSymbolTable() {
+        return symbolTable;
     }
 }

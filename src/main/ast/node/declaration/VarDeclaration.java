@@ -40,4 +40,8 @@ public class VarDeclaration extends Declaration {
     public void accept(Visitor visitor, VarVisitType visitType) {
         visitor.visit(this, visitType);
     }
+
+    public String getTypeCodeString() {
+        return type.getCodeString();
+    }
 }

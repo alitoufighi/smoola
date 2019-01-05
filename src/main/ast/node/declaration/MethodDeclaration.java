@@ -94,4 +94,15 @@ public class MethodDeclaration extends Declaration {
     public SymbolTable getSymbolTable() {
         return symbolTable;
     }
+
+    public String getArgsCodeString() {
+        StringBuilder result = new StringBuilder();
+        for(VarDeclaration arg : args)
+            result.append(arg.getTypeCodeString());
+        return result.toString();
+    }
+
+    public String getReturnTypeCodeString() {
+        return returnType.getCodeString();
+    }
 }

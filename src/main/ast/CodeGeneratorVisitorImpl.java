@@ -22,16 +22,14 @@ import java.nio.file.StandardOpenOption;
 
 public class CodeGeneratorVisitorImpl implements Visitor {
     private String getJasminFileName() {
-//        return "name.j";
         return Program.currentClass.concat(".j");
     }
-//    private static FileWriter fileWriter;
+
     private void addInstruction(String instruction){
-//        try (Writer writer = new BufferedWriter(new OutputStreamWriter(
-//                new FileOutputStream(Paths.get(getJasminFileName()).toString()), StandardCharsets.UTF_8))) {
-//            writer.append(instruction);
         try{
-            Files.write(Paths.get(getJasminFileName()), (instruction+System.lineSeparator()).getBytes(StandardCharsets.UTF_8), StandardOpenOption.CREATE, StandardOpenOption.APPEND);
+            Files.write(Paths.get(getJasminFileName()),
+                    (instruction+System.lineSeparator()).getBytes(StandardCharsets.UTF_8),
+                    StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e){
             System.out.println("Exception occurred.");
         }
@@ -64,7 +62,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         addInstruction("\taload_0");
         addInstruction("\tinvokespecial "+classDeclaration.getParentObjectString()+"/<init>()V");
         addInstruction("\treturn");
-        addInstruction(".end method");
+        addInstruction(".end method\n");
 
 //        if()
         for(VarDeclaration varDeclaration : classDeclaration.getVarDeclarations())
@@ -75,12 +73,11 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(MethodDeclaration methodDeclaration) {
-//        if()
-//        if(visitType.equals(ClassVisitType.Main)){
-//            addInstruction("method public static main()V");
-//        } else{
-        addInstruction(".method public "+methodDeclaration.getName().getName());
-//        }
+        if(methodDeclaration.isMainMethod())
+            addInstruction(".method public static main()V");
+        else
+            addInstruction(".method public "+methodDeclaration.getName().getName()+
+                    "("+methodDeclaration.getArgsCodeString()+")"+methodDeclaration.getReturnTypeCodeString());
     }
 
     @Override

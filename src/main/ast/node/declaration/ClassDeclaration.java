@@ -3,6 +3,7 @@ package ast.node.declaration;
 import ast.Type.Type;
 import ast.Visitor;
 import ast.node.expression.Identifier;
+import symbolTable.SymbolTable;
 
 import java.util.ArrayList;
 
@@ -11,9 +12,17 @@ public class ClassDeclaration extends Declaration{
     private Identifier parentName;
     private ArrayList<VarDeclaration> varDeclarations = new ArrayList<>();
     private ArrayList<MethodDeclaration> methodDeclarations = new ArrayList<>();
+    private SymbolTable symbolTable;
 
+	public SymbolTable getSymbolTable() {
+		return symbolTable;
+	}
 
-    public ClassDeclaration(Identifier name, Identifier parentName) {
+	public void setSymbolTable(SymbolTable symbolTable) {
+		this.symbolTable = symbolTable;
+	}
+
+	public ClassDeclaration(Identifier name, Identifier parentName) {
         this.name = name;
         this.parentName = parentName;
         this.lineNum = name.getLineNum();

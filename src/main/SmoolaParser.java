@@ -275,7 +275,7 @@ public class SmoolaParser extends Parser {
 			            ((MainClassContext)_localctx).c =  new ClassDeclaration(new Identifier(classname, ((MainClassContext)_localctx).class_name.getLine()),
 			                new Identifier("Object", 0)
 			                );
-			            _localctx.c.setLlineNum(((MainClassContext)_localctx).class_name.getLine());
+			            _localctx.c.setLineNum(((MainClassContext)_localctx).class_name.getLine());
 
 			            MethodDeclaration mainMethod = new MethodDeclaration(
 			                new Identifier(((MainClassContext)_localctx).method_name.getText(),

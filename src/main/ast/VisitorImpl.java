@@ -82,6 +82,7 @@ public class VisitorImpl implements Visitor {
                 mdec.accept(this);
 
             Program.addClassSymbolTable(name, SymbolTable.top);
+            classDeclaration.setSymbolTable(SymbolTable.top);
             SymbolTable.pop();
         }
         else if (Program.passNum == 2){

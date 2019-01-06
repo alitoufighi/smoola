@@ -47,6 +47,8 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Program program) {
+        //TODO: clean .j files
+
         program.getMainClass().accept(this);
         for (ClassDeclaration classDeclaration : program.getClasses())
             classDeclaration.accept(this);
@@ -69,7 +71,6 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         decIndent();
         addInstruction(".end method\n");
 
-//        SymbolTable.push(Program.getClassSymbolTable(classDeclaration.getName().getName()));
         SymbolTable.push(classDeclaration.getSymbolTable());
 
         for(VarDeclaration varDeclaration : classDeclaration.getVarDeclarations())
@@ -99,8 +100,12 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(VarDeclaration varDeclaration, VarVisitType visitType) {
-
+        // not called.
     }
+
+//    public void visit(VarDeclaration varDeclaration) {
+//
+//    }
 
     @Override
     public void visit(ArrayCall arrayCall) {
@@ -153,7 +158,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(This instance) {
-
+        addInstruction("aload_0");
     }
 
     @Override

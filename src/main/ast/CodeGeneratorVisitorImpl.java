@@ -9,44 +9,47 @@ import ast.node.expression.Value.BooleanValue;
 import ast.node.expression.Value.IntValue;
 import ast.node.expression.Value.StringValue;
 import ast.node.statement.*;
+import symbolTable.ItemNotFoundException;
+import symbolTable.SymbolTable;
+import symbolTable.SymbolTableVariableItem;
 
 import java.io.IOException;
-import java.math.BigInteger;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
-
-//import java.io.FileWriter;
-//import java.util.stream.Stream;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 public class CodeGeneratorVisitorImpl implements Visitor {
     private String getJasminFileName() {
         return Program.currentClass.concat(".j");
     }
 
+    private int indent = 0;
+
     private void addInstruction(String instruction){
         try{
             Files.write(Paths.get(getJasminFileName()),
-                    (instruction+System.lineSeparator()).getBytes(StandardCharsets.UTF_8),
+                    (getIndent() + instruction + System.lineSeparator()).getBytes(StandardCharsets.UTF_8),
                     StandardOpenOption.CREATE, StandardOpenOption.APPEND);
         } catch (IOException e){
             System.out.println("Exception occurred.");
         }
     }
 
+    private String getIndent() {
+        return IntStream.range(0, indent).mapToObj(i -> "\t").collect(Collectors.joining());
+    }
+
+    private void incIndent() { indent++; }
+    private void decIndent() { indent--; }
 
     @Override
     public void visit(Program program) {
         program.getMainClass().accept(this);
         for (ClassDeclaration classDeclaration : program.getClasses())
             classDeclaration.accept(this);
-
-//        try {
-//            Files.write(Paths.get(getJasminFileName()), 5, Charset.forName("UTF-8"));
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
     }
 
     @Override
@@ -59,12 +62,16 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
         // constructor
         addInstruction(".method public <init>()V");
-        addInstruction("\taload_0");
-        addInstruction("\tinvokespecial "+classDeclaration.getParentObjectString()+"/<init>()V");
-        addInstruction("\treturn");
+        incIndent();
+        addInstruction("aload_0");
+        addInstruction("invokespecial "+classDeclaration.getParentObjectString()+"/<init>()V");
+        addInstruction("return");
+        decIndent();
         addInstruction(".end method\n");
 
-//        if()
+//        SymbolTable.push(Program.getClassSymbolTable(classDeclaration.getName().getName()));
+        SymbolTable.push(classDeclaration.getSymbolTable());
+
         for(VarDeclaration varDeclaration : classDeclaration.getVarDeclarations())
             varDeclaration.accept(this);
         for(MethodDeclaration methodDeclaration : classDeclaration.getMethodDeclarations())
@@ -78,6 +85,16 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         else
             addInstruction(".method public "+methodDeclaration.getName().getName()+
                     "("+methodDeclaration.getArgsCodeString()+")"+methodDeclaration.getReturnTypeCodeString());
+
+        SymbolTable.push(methodDeclaration.getSymbolTable());
+//        for(VarDeclaration arg : methodDeclaration.getArgs())
+//            arg.accept(this, VarVisitType.InMethod);
+//        for(VarDeclaration localVar : methodDeclaration.getLocalVars())
+//            localVar.accept(this, VarVisitType.InMethod);
+        incIndent();
+        for(Statement stm : methodDeclaration.getBody())
+            stm.accept(this);
+        decIndent();
     }
 
     @Override
@@ -92,12 +109,21 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(BinaryExpression binaryExpression) {
-
+        binaryExpression.getLeft().accept(this);
+        binaryExpression.getRight().accept(this);
+        switch (binaryExpression.getBinaryOperator()){
+            case mult:
+                addInstruction("imul");
+                break;
+            case add:
+                addInstruction("iadd");
+                break;
+        }
+        System.out.println("!");
     }
 
     @Override
     public void visit(Identifier identifier) {
-
     }
 
     @Override
@@ -142,21 +168,24 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(IntValue value) {
-        try {
-            Files.write(Paths.get(getJasminFileName()), BigInteger.valueOf(value.getConstant()).toByteArray());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        addInstruction("iconst_"+value.getConstant());
     }
 
     @Override
     public void visit(StringValue value) {
-
+        addInstruction("ldc " + value.getConstant());
     }
 
     @Override
     public void visit(Assign assign) {
-
+        assign.getlValue().accept(this);
+        assign.getrValue().accept(this);
+        try{
+            int leftIndex = ((SymbolTableVariableItem)SymbolTable.top.get(((Identifier)assign.getlValue()).getName()+"@var")).getIndex();
+            addInstruction("istore_" + leftIndex);
+        } catch (ItemNotFoundException e){
+            System.out.println("WHAT THE FUCK");
+        }
     }
 
     @Override

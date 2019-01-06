@@ -1,6 +1,5 @@
 import ast.CodeGeneratorVisitorImpl;
 import ast.VisitorImpl;
-import ast.node.PhaseNum;
 import ast.node.Program;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CharStreams;
@@ -21,11 +20,11 @@ public class MySmoola {
 		p.accept(visitor);
 		p.accept(codeGeneratorVisitor);
 
-		if(!p.isValid(PhaseNum.two))
-			p.printErrors(PhaseNum.two);
-		else if(!p.isValid(PhaseNum.three))
-			p.printErrors(PhaseNum.three);
-		else
-			p.printMessages();
+//		if(!p.isValid(PhaseNum.two))
+//			p.printErrors(PhaseNum.two);
+//		else if(!p.isValid(PhaseNum.three))
+//			p.printErrors(PhaseNum.three);
+//		else
+//			p.printMessages();
 	}
 }

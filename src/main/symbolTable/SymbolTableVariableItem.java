@@ -3,14 +3,14 @@ package symbolTable;
 import ast.Type.Type;
 
 public class SymbolTableVariableItem extends SymbolTableItem {
-    static private int index_counter = 0;
+    static private int indexCounter = 1;
     private int index;
     protected Type type;
 
     public SymbolTableVariableItem(String name, Type type) {
         this.name = name;
         this.type = type;
-        this.index = index_counter++;
+        this.index = indexCounter++;
     }
 
     public String getName() {
@@ -30,5 +30,5 @@ public class SymbolTableVariableItem extends SymbolTableItem {
         return index;
     }
 
-
+    public void resetIndex() { indexCounter = 1; }
 }

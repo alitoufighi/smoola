@@ -129,7 +129,6 @@ public class VisitorImpl implements Visitor {
     public void visit(MethodDeclaration methodDeclaration) {
     	String name = methodDeclaration.getName().getName();
         if(Program.passNum == 1){
-
             ArrayList<Type> argsType = new ArrayList<>();
             for(VarDeclaration var : methodDeclaration.getArgs())
                 argsType.add(var.getType());
@@ -154,6 +153,9 @@ public class VisitorImpl implements Visitor {
             }
         }
         else if(Program.passNum == 2){
+        	// reset index
+			SymbolTableVariableItem.resetIndex();
+			System.out.println("reset");
             Program.addMessage(methodDeclaration.toString());
 
             Type varType = methodDeclaration.getReturnType();

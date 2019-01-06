@@ -30,5 +30,5 @@ public class SymbolTableVariableItem extends SymbolTableItem {
         return index;
     }
 
-    public void resetIndex() { indexCounter = 1; }
+    public static void resetIndex() { indexCounter = 1; }
 }

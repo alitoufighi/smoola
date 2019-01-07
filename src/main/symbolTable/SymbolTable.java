@@ -1,5 +1,7 @@
 package symbolTable;
 
+import ast.node.expression.Identifier;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
@@ -20,6 +22,14 @@ public class SymbolTable {
 		if(top != null)
 			stack.push(top);
 		top = symbolTable;
+	}
+
+	public static int getIndex(Identifier identifier) {
+		try{
+			return ((SymbolTableVariableItem)SymbolTable.top.get(identifier.getName()+"@var")).getIndex();
+		} catch (ItemNotFoundException e){
+			return -1;
+		}
 	}
 
 	// replaces variable item in top symbol table (should only do once :D) (place a boolean for shadowed, in var dec?

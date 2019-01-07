@@ -17,7 +17,7 @@ public abstract class Type {
         if(this instanceof IntType){
             return "I";
         } else if(this instanceof StringType){
-            return "Ljava/lang/String ;";
+            return "Ljava/lang/String;";
         } else if(this instanceof ArrayType){
             return "[I";
         } else if(this instanceof BooleanType){

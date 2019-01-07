@@ -10,6 +10,7 @@ import ast.node.declaration.ClassDeclaration;
 import ast.node.expression.Expression;
 import symbolTable.SymbolTable;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -54,6 +55,18 @@ public class Program {
 
     public static boolean isMainClass(String name) {
         return mainClass.getName().getName().equals(name);
+    }
+
+    public static void cleanJasminFiles() {
+        File[] fList = new File(".").listFiles();
+        assert fList != null;
+        for (File file : fList) {
+            String pes = file.getName();
+            if (pes.endsWith(".j")) {
+                boolean success = (new File(file.getName()).delete());
+            }
+        }
+
     }
 
     public void createClassSymbolTableHierarchy() {

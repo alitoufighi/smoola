@@ -331,7 +331,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(BooleanValue value) {
-        addInstruction("bipush " + (value.isConstant() ? "1" : "0")); //TODO: Check
+        addInstruction("iconst_" + (value.isConstant() ? "1" : "0")); //TODO: Check
     }
 
     @Override
@@ -346,13 +346,13 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Assign assign) {
-//        assign.getlValue().accept(this);
         assign.getrValue().accept(this);
         try{
             int leftIndex = ((SymbolTableVariableItem)SymbolTable.top.get(((Identifier)assign.getlValue()).getName()+"@var")).getIndex();
-            addInstruction("istore " + leftIndex);
+            generateCodeAccordingToType(assign.getlValue().getType(),
+                    "istore " + leftIndex, "astore " + leftIndex);
         } catch (ItemNotFoundException e){
-            System.out.println("WHAT THE FUCK");
+            System.out.println("Unexpected exception at Assign");
         }
     }
 
@@ -363,7 +363,18 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Conditional conditional) {
+        String elseLabel = getLabel();
+        String endLabel = getLabel();
 
+        conditional.getExpression().accept(this);
+        addInstruction("ifeq " + elseLabel);
+        conditional.getConsequenceBody().accept(this);
+        addInstruction("goto " + endLabel);
+        addInstruction(elseLabel + ":");
+        if(conditional.hasAlternativeBody()){
+            conditional.getAlternativeBody().accept(this);
+        }
+        addInstruction(endLabel + ":");
     }
 
 //TODO: Meghdar dehie avalie!

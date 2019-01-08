@@ -217,7 +217,7 @@ public class VisitorImpl implements Visitor {
         while(true){
             if(parent.getName().getName().equals(leftClass.getName().getName()))
                 return true;
-            if(!parent.hasParent())
+            if(!(parent.hasParent() || parent.isObject()))
                 break;
             parent = Program.getClass(parent.getParentName().getName());
         }
@@ -751,7 +751,6 @@ public class VisitorImpl implements Visitor {
     @Override
     public void visit(This instance) {
         Program.addMessage(instance.toString());
-        instance.accept(this);
         instance.setType(new UserDefinedType(new Identifier(Program.currentClass, instance.getLineNum())));
         instance.setLvalue(false);
     }

@@ -77,6 +77,9 @@ public class Program {
                 c = classes.get(classTable.getKey());
                 String className = c.getName().getName();
                 if (c.hasParent()) {
+                    if(c.getName().getName().equals("B")){
+                        System.out.println("B Visited ");
+                    }
                     String parentName = classes.get(classTable.getKey()).getParentName().getName();
                     if(checkCircularInheritance(c)){
                         Program.addError(
@@ -86,8 +89,8 @@ public class Program {
                         );
                     } else {
 //                        parentsList.put(className, parentName);
-                        if (!parentName.equals(c.getName().getName()))
-                            classTable.getValue().setPre(classesSymbolTable.get(parentName));
+//                        if (!parentName.equals(c.getName().getName()))
+                        classTable.getValue().setPre(classesSymbolTable.get(parentName));
                     }
                 } else if (!c.getName().getName().equals("Object")) {
                     classTable.getValue().setPre(classesSymbolTable.get(

@@ -76,6 +76,8 @@ public class CodeGeneratorVisitorImpl implements Visitor {
                 type instanceof BooleanType) {
             addInstruction(iInstruction);
         } else {
+//            int[] arr = new int[5];
+//            arr.toString()
             System.out.println("WTF");
             System.out.println(type.toString());
         }
@@ -186,13 +188,16 @@ public class CodeGeneratorVisitorImpl implements Visitor {
     public void visit(BinaryExpression binaryExpression) {
         String labelFalse = "", labelTrue = ""; //TODO: CLEAN IT
         if(!(binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.or) ||
-                binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.and))) {
-            binaryExpression.getLeft().accept(this);
+                binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.and))){
+//                binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.assign))) {
+
+            if(!(binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.assign) &&
+                    !(binaryExpression.getLeft() instanceof ArrayCall)))
+                binaryExpression.getLeft().accept(this);
             binaryExpression.getRight().accept(this);
         } else {
             labelFalse = getLabel();
             labelTrue = getLabel();
-//            if(binaryExpression.ge)
         }
 
         Expression left = binaryExpression.getLeft();
@@ -208,16 +213,27 @@ public class CodeGeneratorVisitorImpl implements Visitor {
                 break;
             case assign:
                 //TODO: dup vaseye arraycall dastan nadare?
-                addInstruction("dup_x2");
+                if(left instanceof ArrayCall)
+                    addInstruction("dup_x2");
+                else
+                    addInstruction("dup");
+//                if(left)
                 if(left instanceof Identifier){
                     int index = SymbolTable.getIndex((Identifier) left);
                     generateCodeAccordingToType(
                             left.getType(), "istore " + index, "astore " + index);
                 } else if (left instanceof ArrayCall){
+//                    left.accept(this);
                     addInstruction("iastore");
                     //TODO: vaghti mikham be arraycall access dashte basham (x = arr[5] ya writeln(arr[4]) ) bayad "iaload" konam
                 } else
                     System.out.println("Unexpected Error in Binary Expression");
+//                if(right instanceof )
+//                right.accept(this);
+//                if(right instanceof ArrayCall)
+//                    addInstruction("iaload");
+
+//                generateCodeAccordingToType(right.getType(), "");
                 break;
             case eq: case lt: case gt: case neq:
                 generateBooleanBinaryExpressionCode(binaryExpression.getBinaryOperator());
@@ -441,10 +457,172 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Write write) {
-        addInstruction("getstatic " + "java/lang/System/out Ljava/io/PrintStream;");
-        write.getArg().accept(this);
+        String argCodeString;
+        if(write.getArg().getType() instanceof ArrayType){
+            String resultLoadCode = generateArrayToStringCode(write.getArg());
+            addInstruction("getstatic " + "java/lang/System/out Ljava/io/PrintStream;");
+            addInstruction(resultLoadCode);
+            argCodeString = "Ljava/lang/String;";
+        } else {
+            addInstruction("getstatic " + "java/lang/System/out Ljava/io/PrintStream;");
+            write.getArg().accept(this);
+            argCodeString = write.getArg().getType().getCodeString();
+        }
         if(write.getArg() instanceof ArrayCall)
             addInstruction("iaload");
-        addInstruction("invokevirtual " + "java/io/PrintStream/println(" + write.getArg().getType().getCodeString() + ")V");
+        addInstruction("invokevirtual " + "java/io/PrintStream/println(" + argCodeString + ")V");
+    }
+
+    // returns instruction to load resulting string
+    private String generateArrayToStringCode(Expression arg) {
+        //      16: ldc           #2                  // String
+        //      18: astore_2
+        //      19: aload_1
+        //      20: arraylength
+        //      21: iconst_1
+        //      22: isub
+        //      23: istore_3
+        //      24: iload_3
+        //      25: iconst_m1
+        //      26: if_icmpne     32
+        //      29: ldc           #2                  // String
+        //      31: astore_2
+        //      32: new           #3                  // class java/lang/StringBuilder
+        //      35: dup
+        //      36: invokespecial #4                  // Method java/lang/StringBuilder."<init>":()V
+        //      39: astore        4
+        //      41: iconst_0
+        //      42: istore        5
+        //      44: aload         4
+        //      46: aload_1
+        //      47: iload         5
+        //      49: iaload
+        //      50: invokevirtual #5                  // Method java/lang/StringBuilder.append:(I)Ljava/lang/StringBuilder;
+        //      53: pop
+        //      54: iload         5
+        //      56: iload_3
+        //      57: if_icmpne     69
+        //      60: aload         4
+        //      62: invokevirtual #6                  // Method java/lang/StringBuilder.toString:()Ljava/lang/String;
+        //      65: astore_2
+        //      66: goto          83
+        //      69: aload         4
+        //      71: ldc           #7                  // String ,
+        //      73: invokevirtual #8                  // Method java/lang/StringBuilder.append:(Ljava/lang/String;)Ljava/lang/StringBuilder;
+        //      76: pop
+        //      77: iinc          5, 1
+        //      80: goto          44
+        //      83: getstatic     #9                  // Field java/lang/System.out:Ljava/io/PrintStream;
+        //      86: aload_2
+        //      87: invokevirtual #10                 // Method java/io/PrintStream.println:(Ljava/lang/String;)V
+        int resultField = 19, iMaxField = 18, strBuilderField = 17, iField = 16;
+        String firstOfLoop = getLabel(), posArrLabel = getLabel(), appendCommaLabel = getLabel(), endLabel = getLabel();
+        int arrIndex = SymbolTable.getIndex((Identifier)arg);
+        // we store return string value on field 19 of stack
+
+        //1 : arIndex
+        //2 : resultField
+        //3 : iMaxField
+        //4 : strBuilder
+        //5 : iField
+
+//        addInstruction("ldc " + "\"\"");
+//        addInstruction("astore_" + resultField);
+        addInstruction("aload " + arrIndex);
+        addInstruction("arraylength");
+        addInstruction("iconst_1");
+        addInstruction("isub");
+        addInstruction("istore " + iMaxField);
+        addInstruction("iload " + iMaxField);
+        addInstruction("iconst_m1");
+        addInstruction("if_icmpne "+ posArrLabel);
+        addInstruction("ldc " + "\"\"");
+        addInstruction("astore " + resultField);
+        addInstruction("goto " + endLabel);
+        addInstruction(posArrLabel + ":");
+        addInstruction("new " + "java/lang/StringBuilder");
+        addInstruction("dup");
+        addInstruction("invokespecial " + "java/lang/StringBuilder/<init>()V");
+        addInstruction("astore " + strBuilderField);
+        addInstruction("iconst_0");
+        addInstruction("istore " + iField);
+        addInstruction(firstOfLoop + ":");
+        addInstruction("aload " + strBuilderField);
+        addInstruction("aload " + arrIndex);
+        addInstruction("iload " + iField);
+        addInstruction("iaload ");
+        addInstruction("invokevirtual " + "java/lang/StringBuilder/append(I)Ljava/lang/StringBuilder;");
+        addInstruction("pop");
+        addInstruction("iload " + iField);
+        addInstruction("iload " + iMaxField);
+        addInstruction("if_icmpne " + appendCommaLabel);
+        addInstruction("aload " + strBuilderField);
+        addInstruction("invokevirtual " + "java/lang/StringBuilder/toString()Ljava/lang/String;");
+        addInstruction("astore " + resultField);
+        addInstruction("goto " + endLabel);
+        addInstruction(appendCommaLabel + ":");
+        addInstruction("aload " + strBuilderField);
+        addInstruction("ldc " + "\", \"");
+        addInstruction("invokevirtual " + "java/lang/StringBuilder/append(Ljava/lang/String;)Ljava/lang/StringBuilder;");
+        addInstruction("pop");
+        addInstruction("iinc " + iField + " 1");
+        addInstruction("goto " + firstOfLoop);
+        addInstruction(endLabel + ":");
+        return "aload " + resultField;
+//        addInstruction("aload " + resultField);
     }
 }
+
+//TODO: User Defined Type?
+
+//class Main{
+//    def main(): int {
+//        return new Notmain().notmain(4);
+//    }
+//}
+//
+//class Notmain{
+//    def notmain(x : int) : int {
+//        #var y : int;
+//        #var j : boolean;
+//        #var i : boolean;
+//        #var k : boolean;
+//        #var l : boolean;
+//        #var str : string;
+//        #i = false;
+//        #k = true;
+//        #l = false;
+//        #l = false;
+//        #j = k || l;
+//
+//        #if(j || false || k) then
+//        #    str = "true";
+//        #else
+//        #    str = "false";
+//        #j = j > 3;
+//        #j = 2 <> 3;
+//        #y = 2 + 3;
+//        #y = 2 * 3;
+//        #y = 2 - 3;
+//        #y = 2 / 3;
+//        #y = x = 30;
+//
+//        var arr : int[];
+//        var i : int;
+//        var j : int;
+//        var a : int[];
+//        a = new int[5];
+//        i = 4;
+//        arr = new int[50];
+//        arr[5] = 4;
+//        arr[4] = arr[5] = i;
+//        arr[4] = i = j = arr[5] = arr[3] = 3;
+//        a[0] = arr[4] = 0;
+//        a[1] = i = 1;
+//        a[2] = j = 2;
+//        a[3] = arr[5] = 3;
+//        a[4] = arr[3] = 4;
+//        writeln(a);
+//        return x;
+//    }
+//}

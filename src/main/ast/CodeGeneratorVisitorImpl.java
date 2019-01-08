@@ -15,9 +15,7 @@ import ast.node.expression.Value.BooleanValue;
 import ast.node.expression.Value.IntValue;
 import ast.node.expression.Value.StringValue;
 import ast.node.statement.*;
-import symbolTable.ItemNotFoundException;
 import symbolTable.SymbolTable;
-import symbolTable.SymbolTableVariableItem;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -123,7 +121,6 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Program program) {
-        //TODO: clean .j files
         Program.cleanJasminFiles();
 
         program.getMainClass().accept(this);
@@ -142,8 +139,6 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
         SymbolTable.push(classDeclaration.getSymbolTable());
 
-//        for(VarDeclaration varDeclaration : classDeclaration.getVarDeclarations())
-//            varDeclaration.accept(this);
         for(MethodDeclaration methodDeclaration : classDeclaration.getMethodDeclarations())
             methodDeclaration.accept(this);
     }
@@ -164,7 +159,6 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         for(Statement stm : methodDeclaration.getBody())
             stm.accept(this);
         generateReturnCode(methodDeclaration);
-
         decIndent();
         addInstruction(".end method\n");
     }
@@ -177,7 +171,15 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(ArrayCall arrayCall) {
-
+//        Expression instance = arrayCall.getInstance();
+//        if(instance instanceof Identifier){
+//            int index = SymbolTable.getIndex((Identifier)arrayCall.getInstance());
+//            ((Identifier) arrayCall.getInstance()).accept();
+//        }
+        //if return value of function is array?
+        arrayCall.getInstance().accept(this);
+        arrayCall.getIndex().accept(this);
+        //TODO: Check
     }
 
     @Override
@@ -190,9 +192,13 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         } else {
             labelFalse = getLabel();
             labelTrue = getLabel();
+//            if(binaryExpression.ge)
         }
 
         Expression left = binaryExpression.getLeft();
+        Expression right = binaryExpression.getRight();
+        if(right instanceof ArrayCall)
+            addInstruction("iaload");
         switch (binaryExpression.getBinaryOperator()) {
             case mult:
                 addInstruction("imul");
@@ -201,12 +207,17 @@ public class CodeGeneratorVisitorImpl implements Visitor {
                 addInstruction("iadd");
                 break;
             case assign:
+                //TODO: dup vaseye arraycall dastan nadare?
+                addInstruction("dup_x2");
                 if(left instanceof Identifier){
                     int index = SymbolTable.getIndex((Identifier) left);
                     generateCodeAccordingToType(
                             left.getType(), "istore " + index, "astore " + index);
+                } else if (left instanceof ArrayCall){
+                    addInstruction("iastore");
+                    //TODO: vaghti mikham be arraycall access dashte basham (x = arr[5] ya writeln(arr[4]) ) bayad "iaload" konam
                 } else
-                    System.out.println("Error");
+                    System.out.println("Unexpected Error in Binary Expression");
                 break;
             case eq: case lt: case gt: case neq:
                 generateBooleanBinaryExpressionCode(binaryExpression.getBinaryOperator());
@@ -230,7 +241,6 @@ public class CodeGeneratorVisitorImpl implements Visitor {
                 addInstruction("iconst_0");
                 addInstruction(labelStore + ":");
                 break;
-                //TODO:toye slide ha hast (short circuit!)
             case and:
 //                String labelFalse = getLabel();
 //                String labelTrue = getLabel();
@@ -244,7 +254,6 @@ public class CodeGeneratorVisitorImpl implements Visitor {
                 addInstruction("iconst_0");
                 addInstruction(labelTrue + ":");
                 break;
-                //TODO: implement
         }
     }
 
@@ -265,6 +274,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
                 break;
             default:
                 jumpCode = "";
+                break;
         }
         String label1 = getLabel();
         String label2 = getLabel();
@@ -278,7 +288,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Identifier identifier) {
-        System.out.println("Visiting "+identifier.getName()+ " at line "+identifier.getLineNum());
+        //System.out.println("Visiting "+identifier.getName()+ " at line "+identifier.getLineNum());
         int index = SymbolTable.getIndex(identifier);
         generateCodeAccordingToType(identifier.getType()
                 , "iload " + index, "aload " + index);
@@ -286,12 +296,13 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Identifier identifier, int type) {
-
+        // not called
     }
 
     @Override
     public void visit(Length length) {
-
+        length.getExpression().accept(this);
+        addInstruction("arraylength");
     }
 
     @Override
@@ -309,7 +320,8 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(NewArray newArray) {
-
+        newArray.getExpression().accept(this);
+        addInstruction("newarray int");
     }
 
     @Override
@@ -326,7 +338,23 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(UnaryExpression unaryExpression) {
-
+        unaryExpression.getValue().accept(this);
+        if(unaryExpression.getValue() instanceof ArrayCall)
+            addInstruction("iaload");
+        switch (unaryExpression.getUnaryOperator()){
+            case not:
+                String labelZero = getLabel();
+                String labelEnd = getLabel();
+                addInstruction("ifne " + labelZero);
+                addInstruction("iconst_1");
+                addInstruction("goto " + labelEnd);
+                addInstruction(labelZero + ":");
+                addInstruction("iconst_0");
+                addInstruction(labelEnd + ":");
+                break;
+            case minus:
+                addInstruction("ineg");
+        }
     }
 
     @Override
@@ -346,19 +374,26 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Assign assign) {
-        assign.getrValue().accept(this);
-        try{
-            int leftIndex = ((SymbolTableVariableItem)SymbolTable.top.get(((Identifier)assign.getlValue()).getName()+"@var")).getIndex();
+        int leftIndex;
+        if(assign.getlValue() instanceof ArrayCall){
+            assign.getlValue().accept(this);
+            assign.getrValue().accept(this);
+            if(assign.getrValue() instanceof ArrayCall)
+                addInstruction("iaload");
+            addInstruction("iastore");
+        }
+        else {
+            assign.getrValue().accept(this);
+            leftIndex = SymbolTable.getIndex((Identifier)assign.getlValue());
             generateCodeAccordingToType(assign.getlValue().getType(),
                     "istore " + leftIndex, "astore " + leftIndex);
-        } catch (ItemNotFoundException e){
-            System.out.println("Unexpected exception at Assign");
         }
     }
 
     @Override
     public void visit(Block block) {
-
+        for(Statement stm : block.getBody())
+            stm.accept(this);
     }
 
     @Override
@@ -393,14 +428,23 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(While loop) {
+        String labelFirst = getLabel();
+        String labelEnd = getLabel();
 
+        addInstruction(labelFirst + ":");
+        loop.getCondition().accept(this);
+        addInstruction("ifeq " + labelEnd);
+        loop.getBody().accept(this);
+        addInstruction("goto " + labelFirst);
+        addInstruction(labelEnd + ":");
     }
 
     @Override
     public void visit(Write write) {
-        System.out.println("Visiting Write");
         addInstruction("getstatic " + "java/lang/System/out Ljava/io/PrintStream;");
         write.getArg().accept(this);
+        if(write.getArg() instanceof ArrayCall)
+            addInstruction("iaload");
         addInstruction("invokevirtual " + "java/io/PrintStream/println(" + write.getArg().getType().getCodeString() + ")V");
     }
 }

@@ -9,6 +9,10 @@ public class SymbolTableVariableItem extends SymbolTableItem {
     private ClassDeclaration classDeclaration;
     protected Type type;
 
+    public String getFieldDescriptorCode() {
+        return classDeclaration.getName().getName() + "/" + name + " " + type.getCodeString();
+    }
+
     public SymbolTableVariableItem(String name, Type type) {
         this.name = name;
         this.type = type;

@@ -1,5 +1,6 @@
 package symbolTable;
 
+import ast.node.expression.Expression;
 import ast.node.expression.Identifier;
 
 import java.util.ArrayList;
@@ -29,6 +30,20 @@ public class SymbolTable {
 			return ((SymbolTableVariableItem)SymbolTable.top.get(identifier.getName()+"@var")).getIndex();
 		} catch (ItemNotFoundException e){
 			return -1;
+		}
+	}
+
+	public static boolean isClassField(Expression name) {
+		return (name instanceof Identifier) &&
+				(SymbolTable.top.getInCurrentScope(((Identifier) name).getName() + "@var") == null);
+	}
+
+	public static String getFieldDescriptorCode(String name) {
+		try{
+			SymbolTableVariableItem item = (SymbolTableVariableItem)SymbolTable.top.get(name + "@var");
+			return item.getFieldDescriptorCode();
+		} catch (ItemNotFoundException e){
+			return null;
 		}
 	}
 

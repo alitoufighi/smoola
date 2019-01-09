@@ -15,10 +15,7 @@ import ast.node.expression.Value.BooleanValue;
 import ast.node.expression.Value.IntValue;
 import ast.node.expression.Value.StringValue;
 import ast.node.statement.*;
-import symbolTable.ItemAlreadyExistsException;
-import symbolTable.ItemNotFoundException;
 import symbolTable.SymbolTable;
-import symbolTable.SymbolTableVariableItem;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -239,10 +236,19 @@ public class CodeGeneratorVisitorImpl implements Visitor {
                     addInstruction("dup");
                 if(left instanceof Identifier){
                     int index = SymbolTable.getIndex((Identifier) left);
-                    generateCodeAccordingToType(
-                            left.getType(), "istore " + index, "astore " + index);
-                } else if (left instanceof ArrayCall)
-                    addInstruction("iastore");
+                    if(SymbolTable.isClassField(left))
+                        addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)left).getName()));
+                    else
+                        generateCodeAccordingToType(binaryExpression.getLeft().getType(),
+                                "istore " + index, "astore " + index);
+//                    generateCodeAccordingToType(
+//                            left.getType(), "istore " + index, "astore " + index);
+                } else if (left instanceof ArrayCall){
+                    if(SymbolTable.isClassField(((ArrayCall) left).getInstance()))
+                        addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)((ArrayCall) left).getInstance()).getName()));
+                    else
+                        addInstruction("iastore");
+                }
                 else
                     System.out.println("Unexpected Error in Binary Expression");
                 break;
@@ -313,22 +319,14 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Identifier identifier) {
-    	if(SymbolTable.top.getInCurrentScope(identifier.getName() + "@var") != null) {
+    	if(!SymbolTable.isClassField(identifier)) {
 			int index = SymbolTable.getIndex(identifier);
 			generateCodeAccordingToType(
 					identifier.getType(), "iload " + index, "aload " + index);
 		}
-
 		else {
 			/// TODO getfield from the classes
-			try {
-				SymbolTableVariableItem item = (SymbolTableVariableItem)SymbolTable.top.get(identifier.getName() + "@var");
-				addInstruction("getfield " + item.getClassDeclaration().getName().getName() + "/" + item.getName() + " " + item.getType().getCodeString());
-
-			}
-			catch (ItemNotFoundException ex) {
-				System.out.println("Error checking is not good!");
-			}
+            addInstruction("getfield " + SymbolTable.getFieldDescriptorCode(identifier.getName()));
 		}
     }
 
@@ -414,18 +412,28 @@ public class CodeGeneratorVisitorImpl implements Visitor {
     @Override
     public void visit(Assign assign) {
         int leftIndex;
-        if(assign.getlValue() instanceof ArrayCall){
+        Expression lvalue = assign.getlValue();
+        if(lvalue instanceof ArrayCall){
             assign.getlValue().accept(this);
             assign.getrValue().accept(this);
             if(assign.getrValue() instanceof ArrayCall)
                 addInstruction("iaload");
-            addInstruction("iastore");
+
+            if(SymbolTable.isClassField(((ArrayCall) lvalue).getInstance()))
+                addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)((ArrayCall) lvalue).getInstance()).getName()));
+            else
+                addInstruction("iastore");
+            //putfield?
         }
         else {
             assign.getrValue().accept(this);
             leftIndex = SymbolTable.getIndex((Identifier)assign.getlValue());
-            generateCodeAccordingToType(assign.getlValue().getType(),
+            if(SymbolTable.isClassField(lvalue))
+                addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)lvalue).getName()));
+            else
+                generateCodeAccordingToType(assign.getlValue().getType(),
                     "istore " + leftIndex, "astore " + leftIndex);
+            //putfield?
         }
     }
 

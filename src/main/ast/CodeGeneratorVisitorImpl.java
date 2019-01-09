@@ -209,20 +209,25 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(BinaryExpression binaryExpression) {
+        Expression left = binaryExpression.getLeft();
+        Expression right = binaryExpression.getRight();
         String labelFalse = "", labelTrue = ""; //TODO: CLEAN IT
         if(!(binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.or) ||
                 binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.and))){
             if(!(binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.assign) &&
                     !(binaryExpression.getLeft() instanceof ArrayCall)))
                 binaryExpression.getLeft().accept(this);
+
+            if(binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.assign) &&
+                    SymbolTable.isClassField(left) || (left instanceof ArrayCall && SymbolTable.isClassField(((ArrayCall) left).getInstance())))
+                addInstruction("aload_0");
             binaryExpression.getRight().accept(this);
         } else {
             labelFalse = getLabel();
             labelTrue = getLabel();
         }
 
-        Expression left = binaryExpression.getLeft();
-        Expression right = binaryExpression.getRight();
+
         if(right instanceof ArrayCall)
             addInstruction("iaload");
         switch (binaryExpression.getBinaryOperator()) {
@@ -240,7 +245,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
                 if(left instanceof Identifier){
                     int index = SymbolTable.getIndex((Identifier) left);
                     if(SymbolTable.isClassField(left)) {
-						addInstruction("aload_0");
+//						addInstruction("aload_0");
 						addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)left).getName()));
 					}
                     else
@@ -250,7 +255,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 //                            left.getType(), "istore " + index, "astore " + index);
                 } else if (left instanceof ArrayCall){
                     if(SymbolTable.isClassField(((ArrayCall) left).getInstance())) {
-						addInstruction("aload 0");
+//						addInstruction("aload 0");
 						addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier) ((ArrayCall) left).getInstance()).getName()));
                     }
 					else
@@ -423,12 +428,13 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         Expression lvalue = assign.getlValue();
         if(lvalue instanceof ArrayCall){
             assign.getlValue().accept(this);
+            if(SymbolTable.isClassField(lvalue))
+                addInstruction("aload_0");
             assign.getrValue().accept(this);
             if(assign.getrValue() instanceof ArrayCall)
                 addInstruction("iaload");
 
             if(SymbolTable.isClassField(((ArrayCall) lvalue).getInstance())) {
-				addInstruction("aload_0");
             	addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier) ((ArrayCall) lvalue).getInstance()).getName()));
             }
 			else
@@ -436,10 +442,12 @@ public class CodeGeneratorVisitorImpl implements Visitor {
             //putfield?
         }
         else {
+            if(SymbolTable.isClassField(lvalue))
+                addInstruction("aload_0");
             assign.getrValue().accept(this);
             leftIndex = SymbolTable.getIndex((Identifier)assign.getlValue());
             if(SymbolTable.isClassField(lvalue)) {
-				addInstruction("aload_0");
+//				addInstruction("aload_0");
 				addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier) lvalue).getName()));
 			}
 			else

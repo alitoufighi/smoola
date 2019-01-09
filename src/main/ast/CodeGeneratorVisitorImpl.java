@@ -171,13 +171,16 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(VarDeclaration varDeclaration, String className) {
+        Type varType = varDeclaration.getType();
+        if(!(varType instanceof IntType || varType instanceof BooleanType || varType instanceof StringType)) {
+            return;
+        }
         String fieldSpec = className + "/" + varDeclaration.getIdentifier().getName();
         String descriptor = varDeclaration.getTypeCodeString();
-        Type varType = varDeclaration.getType();
         addInstruction("aload_0");
         if(varType instanceof IntType || varType instanceof BooleanType)
             addInstruction("iconst_0");
-        else if (varType instanceof StringType)
+        else
             addInstruction("ldc \"\"");
         addInstruction("putfield " + fieldSpec + " " + descriptor);
     }

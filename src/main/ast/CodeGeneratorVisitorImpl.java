@@ -137,9 +137,8 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         addInstruction(".class public "+classDeclaration.getName().getName());
         addInstruction(".super "+classDeclaration.getParentObjectString());
 
-        for (VarDeclaration varDeclaration : classDeclaration.getVarDeclarations()) {
+        for (VarDeclaration varDeclaration : classDeclaration.getVarDeclarations())
             addInstruction(".field " + SymbolTable.getFieldInitializationCode(varDeclaration.getIdentifier().getName()));
-		}
 
         generateConstructorCode(classDeclaration);
 

@@ -37,7 +37,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
     private String getLabel() {
         return "LABEL" + labelCount++;
     }
-//TODO:age field didam bayad begam fielde (symboltable variable item)
+
     private String getMethodDescriptorCode(String className, String methodName){
         StringBuilder result = new StringBuilder();
         try{
@@ -102,8 +102,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
     private void generateConstructorCode(ClassDeclaration classDeclaration) {
         addInstruction(".method public <init>()V");
         incIndent();
-        addInstruction(".limit locals 50");
-        addInstruction(".limit stack 50");
+        generateLimitsCode();
         addInstruction("aload_0");
         addInstruction("invokespecial " + classDeclaration.getParentObjectString() + "/<init>()V");
         for(VarDeclaration varDeclaration : classDeclaration.getVarDeclarations())
@@ -172,9 +171,8 @@ public class CodeGeneratorVisitorImpl implements Visitor {
     @Override
     public void visit(VarDeclaration varDeclaration, String className) {
         Type varType = varDeclaration.getType();
-        if(!(varType instanceof IntType || varType instanceof BooleanType || varType instanceof StringType)) {
+        if(!(varType instanceof IntType || varType instanceof BooleanType || varType instanceof StringType))
             return;
-        }
         String fieldSpec = className + "/" + varDeclaration.getIdentifier().getName();
         String descriptor = varDeclaration.getTypeCodeString();
         addInstruction("aload_0");
@@ -189,20 +187,15 @@ public class CodeGeneratorVisitorImpl implements Visitor {
     public void visit(VarDeclaration varDeclaration, VarVisitType visitType) {
         Type varType = varDeclaration.getType();
         int varIndex = SymbolTable.getIndex(varDeclaration.getIdentifier());
-        if(varType instanceof IntType){
+        if(varType instanceof IntType || varType instanceof BooleanType){
             addInstruction("iconst_0");
             addInstruction("istore " + varIndex);
         } else if(varType instanceof StringType){
             addInstruction("ldc " + "\"\"");
             addInstruction("astore " + varIndex);
-        } else if(varType instanceof BooleanType){
-            addInstruction("iconst_0");
-            addInstruction("istore " + varIndex);
         }
 
     }
-
-    //TODO: userdefined type argument
 
     @Override
     public void visit(ArrayCall arrayCall) {
@@ -360,7 +353,6 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         String instanceName = methodCall.getInstance().getType().toString();
         String methodDescriptor = instanceName + "/" + methodName + getMethodDescriptorCode(instanceName, methodName);
         methodCallCodeGenerator(methodCall.getInstance(), methodCall.getArgs(), methodDescriptor);
-
     }
 
     @Override
@@ -410,7 +402,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(IntValue value) {
-        addInstruction("bipush "+value.getConstant());
+        addInstruction("bipush " + value.getConstant());
     }
 
     @Override
@@ -420,9 +412,8 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Assign assign) {
-        int leftIndex;
         Expression lvalue = assign.getlValue();
-        if(lvalue instanceof ArrayCall){
+        if(lvalue instanceof ArrayCall) {
             assign.getlValue().accept(this);
             if(SymbolTable.isClassField(lvalue))
                 addInstruction("aload_0");
@@ -430,9 +421,8 @@ public class CodeGeneratorVisitorImpl implements Visitor {
             if(assign.getrValue() instanceof ArrayCall)
                 addInstruction("iaload");
 
-            if(SymbolTable.isClassField(((ArrayCall) lvalue).getInstance())) {
+            if(SymbolTable.isClassField(((ArrayCall) lvalue).getInstance()))
             	addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier) ((ArrayCall) lvalue).getInstance()).getName()));
-            }
 			else
                 addInstruction("iastore");
         }
@@ -442,10 +432,9 @@ public class CodeGeneratorVisitorImpl implements Visitor {
             assign.getrValue().accept(this);
             if(assign.getrValue() instanceof ArrayCall)
                 addInstruction("iaload");
-            leftIndex = SymbolTable.getIndex((Identifier)assign.getlValue());
-            if(SymbolTable.isClassField(lvalue)) {
+            int leftIndex = SymbolTable.getIndex((Identifier)assign.getlValue());
+            if(SymbolTable.isClassField(lvalue))
 				addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier) lvalue).getName()));
-			}
 			else
                 generateCodeAccordingToType(assign.getlValue().getType(),
                     "istore " + leftIndex, "astore " + leftIndex);
@@ -578,54 +567,163 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
 //TODO: User Defined Type?
 
-//class Main{
-//    def main(): int {
-//        return new Notmain().notmain(4);
+
+
+
+
+
+
+//##Created By Farzad
+//class MainClass
+//{
+//    def main() : int
+//    {
+//
+//        writeln("Hello This is a test");
+//        writeln("Factorial of 6 is :");
+//        writeln(new A().calculateFactorial(6));
+//        new B().binaryExprCheck();
+//        new FakeMain().fakeMain();
+//        new TestClass().testMethod(new B());
+//        return 0;
 //    }
 //}
 //
-//class Notmain{
-//    def notmain(x : int) : int {
-//        #var y : int;
-//        #var j : boolean;
-//        #var i : boolean;
-//        #var k : boolean;
-//        #var l : boolean;
-//        #var str : string;
-//        #i = false;
-//        #k = true;
-//        #l = false;
-//        #l = false;
-//        #j = k || l;
-//
-//        #if(j || false || k) then
-//        #    str = "true";
-//        #else
-//        #    str = "false";
-//        #j = j > 3;
-//        #j = 2 <> 3;
-//        #y = 2 + 3;
-//        #y = 2 * 3;
-//        #y = 2 - 3;
-//        #y = 2 / 3;
-//        #y = x = 30;
-//
-//        var arr : int[];
-//        var i : int;
-//        var j : int;
-//        var a : int[];
-//        a = new int[5];
-//        i = 4;
-//        arr = new int[50];
-//        arr[5] = 4;
-//        arr[4] = arr[5] = i;
-//        arr[4] = i = j = arr[5] = arr[3] = 3;
-//        a[0] = arr[4] = 0;
-//        a[1] = i = 1;
-//        a[2] = j = 2;
-//        a[3] = arr[5] = 3;
-//        a[4] = arr[3] = 4;
-//        writeln(a);
-//        return x;
+//class TestClass {
+//    def testMethod(input : B) : int {
+//        return input.f(2);
 //    }
+//
+//}
+//
+//class FakeMain
+//{
+//    def fakeMain() : int
+//    {
+//        var loopTest : LoopTest;
+//        var arr : int[];
+//        arr = new int[10];
+//        loopTest = new LoopTest();
+//        writeln("I pass here");
+//        arr = loopTest.initArr(arr);
+//        arr = loopTest.bubbleSort(arr);
+//        writeln("Sorted : ");
+//        writeln(arr);
+//        return 0;
+//    }
+//}
+//class A
+//{
+//    var fact : int;
+//    def calculateFactorial(input : int) : int
+//    {
+//        var i : int;
+//        writeln("Salam");
+//        i = input;
+//        fact = 1;
+//        while(i <> 0)
+//        {
+//            fact = fact * i;
+//            i = i - 1;
+//        }
+//        return fact;
+//    }
+//
+//}
+//class B extends A
+//{
+//    def binaryExprCheck() : int
+//    {
+//        #var fact : int;
+//        var x : int;
+//        var y : int;
+//        var b : boolean;
+//        x = fact + 12 * 123 + x / 12;
+//        if( (y == fact) && b ) then
+//        {
+//            writeln("It's ok");
+//        }
+//        else
+//        {
+//            writeln("It's not ok");
+//        }
+//        writeln("End");
+//        return 0;
+//    }
+//
+//    def f(in : int) int {
+//        writeln(in);
+//        return in;
+//    }
+//}
+//class LoopTest
+//{
+//
+//    var sortedArray : int [];
+//    var a : int;
+//    var b : int;
+//    def initArr ( arr : int[]) : int []
+//    {
+//
+//        var i : int;
+//
+//        while( i < 10 )
+//        {
+//            arr[i] = i;
+//            i = i + 1;
+//        }
+//        writeln("Unsorted array :");
+//        writeln(arr);
+//        return arr;
+//
+//    }
+//    def bubbleSort( arr : int[]) : int[]
+//    {
+//        var i : int;        #2
+//        var j : int;        #3
+//        var size : int;     #4
+//        var swapped : boolean; #5
+//        var temp : int;     #6
+//        writeln("Here");
+//        swapped = false;
+//        i = 0;
+//        j = 0;
+//        size = arr.length;
+//        while(i < size - 1)
+//        {
+//
+//            swapped = false;
+//            j = 0;
+//            while ( j < size - i - 1 )
+//            {
+//                if( arr[j] < arr [j+1] ) then
+//                {
+//                    a = arr[j];
+//                    b = arr[j+1];
+//                    temp = this.swapAB();
+//                    arr[j] = a;
+//                    arr[j+1] = b;
+//                    swapped = true;
+//                }
+//                j = j + 1;
+//            }
+//
+//            if(!swapped) then
+//            {
+//                i = size + 1; # to break !
+//            }
+//            i = i + 1;
+//        }
+//        sortedArray = arr;
+//        return arr;
+//    }
+//    def swapAB() : int
+//    {
+//        var temp : int;
+//        temp = a;
+//        a = b;
+//        b = temp;
+//        return 0;
+//    }
+//
 //}

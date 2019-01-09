@@ -220,6 +220,8 @@ public class CodeGeneratorVisitorImpl implements Visitor {
             if(!(binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.assign) &&
                     !(binaryExpression.getLeft() instanceof ArrayCall)))
                 binaryExpression.getLeft().accept(this);
+            if(left instanceof ArrayCall && !binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.assign))
+                addInstruction("iaload");
 
             if(binaryExpression.getBinaryOperator().equals(BinaryOperator.OperatorTypes.assign) &&
                     SymbolTable.isClassField(left) || (left instanceof ArrayCall && SymbolTable.isClassField(((ArrayCall) left).getInstance())))

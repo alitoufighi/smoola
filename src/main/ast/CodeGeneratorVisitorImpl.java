@@ -15,7 +15,10 @@ import ast.node.expression.Value.BooleanValue;
 import ast.node.expression.Value.IntValue;
 import ast.node.expression.Value.StringValue;
 import ast.node.statement.*;
+import symbolTable.ItemAlreadyExistsException;
+import symbolTable.ItemNotFoundException;
 import symbolTable.SymbolTable;
+import symbolTable.SymbolTableVariableItem;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -310,9 +313,23 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(Identifier identifier) {
-        int index = SymbolTable.getIndex(identifier);
-        generateCodeAccordingToType(
-                identifier.getType(), "iload " + index, "aload " + index);
+    	if(SymbolTable.top.getInCurrentScope(identifier.getName() + "@var") != null) {
+			int index = SymbolTable.getIndex(identifier);
+			generateCodeAccordingToType(
+					identifier.getType(), "iload " + index, "aload " + index);
+		}
+
+		else {
+			/// TODO getfield from the classes
+			try {
+				SymbolTableVariableItem item = (SymbolTableVariableItem)SymbolTable.top.get(identifier.getName() + "@var");
+				addInstruction("getfield " + item.getClassDeclaration().getName().getName() + " " + item.getName());
+
+			}
+			catch (ItemNotFoundException ex) {
+				System.out.println("Error checking is not good!");
+			}
+		}
     }
 
     @Override

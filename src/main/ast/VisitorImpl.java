@@ -47,6 +47,9 @@ public class VisitorImpl implements Visitor {
         for (ClassDeclaration classDeclaration : program.getClasses())
             classDeclaration.accept(this);
 
+        for (ClassDeclaration classDeclaration : program.getClasses())
+        	classDeclaration.informFieldsParent();
+
 		SymbolTable.pop();
 	}
 

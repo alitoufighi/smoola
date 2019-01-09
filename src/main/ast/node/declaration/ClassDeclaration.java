@@ -4,6 +4,7 @@ import ast.Type.Type;
 import ast.Visitor;
 import ast.node.expression.Identifier;
 import symbolTable.SymbolTable;
+import symbolTable.SymbolTableVariableItem;
 
 import java.util.ArrayList;
 
@@ -13,6 +14,15 @@ public class ClassDeclaration extends Declaration{
     private ArrayList<VarDeclaration> varDeclarations = new ArrayList<>();
     private ArrayList<MethodDeclaration> methodDeclarations = new ArrayList<>();
     private SymbolTable symbolTable;
+
+    public void informFieldsParent() {
+        for (VarDeclaration varDeclaration : this.varDeclarations) {
+            if (symbolTable.getInCurrentScope(varDeclaration.getIdentifier().getName() + "@var") != null) {
+            	((SymbolTableVariableItem)symbolTable.getInCurrentScope(varDeclaration.getIdentifier().getName() + "@var")).setClassDeclaration(this);
+            	System.out.println("class: " + name.getName() + " " + varDeclaration.getIdentifier().getName());
+            }
+        }
+    }
 
 	public SymbolTable getSymbolTable() {
 		return symbolTable;

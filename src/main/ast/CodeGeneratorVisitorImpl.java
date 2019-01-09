@@ -240,17 +240,21 @@ public class CodeGeneratorVisitorImpl implements Visitor {
                     addInstruction("dup");
                 if(left instanceof Identifier){
                     int index = SymbolTable.getIndex((Identifier) left);
-                    if(SymbolTable.isClassField(left))
-                        addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)left).getName()));
+                    if(SymbolTable.isClassField(left)) {
+						addInstruction("aload_0");
+						addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)left).getName()));
+					}
                     else
                         generateCodeAccordingToType(binaryExpression.getLeft().getType(),
                                 "istore " + index, "astore " + index);
 //                    generateCodeAccordingToType(
 //                            left.getType(), "istore " + index, "astore " + index);
                 } else if (left instanceof ArrayCall){
-                    if(SymbolTable.isClassField(((ArrayCall) left).getInstance()))
-                        addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)((ArrayCall) left).getInstance()).getName()));
-                    else
+                    if(SymbolTable.isClassField(((ArrayCall) left).getInstance())) {
+						addInstruction("aload 0");
+						addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier) ((ArrayCall) left).getInstance()).getName()));
+                    }
+					else
                         addInstruction("iastore");
                 }
                 else
@@ -330,6 +334,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 		}
 		else {
 			/// TODO getfield from the classes
+			addInstruction("aload_0");
             addInstruction("getfield " + SymbolTable.getFieldDescriptorCode(identifier.getName()));
 		}
     }
@@ -423,18 +428,22 @@ public class CodeGeneratorVisitorImpl implements Visitor {
             if(assign.getrValue() instanceof ArrayCall)
                 addInstruction("iaload");
 
-            if(SymbolTable.isClassField(((ArrayCall) lvalue).getInstance()))
-                addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)((ArrayCall) lvalue).getInstance()).getName()));
-            else
+            if(SymbolTable.isClassField(((ArrayCall) lvalue).getInstance())) {
+				addInstruction("aload_0");
+            	addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier) ((ArrayCall) lvalue).getInstance()).getName()));
+            }
+			else
                 addInstruction("iastore");
             //putfield?
         }
         else {
             assign.getrValue().accept(this);
             leftIndex = SymbolTable.getIndex((Identifier)assign.getlValue());
-            if(SymbolTable.isClassField(lvalue))
-                addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)lvalue).getName()));
-            else
+            if(SymbolTable.isClassField(lvalue)) {
+				addInstruction("aload_0");
+				addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier) lvalue).getName()));
+			}
+			else
                 generateCodeAccordingToType(assign.getlValue().getType(),
                     "istore " + leftIndex, "astore " + leftIndex);
             //putfield?

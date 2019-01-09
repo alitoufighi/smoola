@@ -41,6 +41,10 @@ public class VarDeclaration extends Declaration {
         visitor.visit(this, visitType);
     }
 
+    public void accept(Visitor visitor, String className) {
+        visitor.visit(this, className);
+    }
+
     public String getTypeCodeString() {
         return type.getCodeString();
     }

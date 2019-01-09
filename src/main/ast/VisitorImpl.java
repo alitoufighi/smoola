@@ -232,6 +232,11 @@ public class VisitorImpl implements Visitor {
     }
 
     @Override
+    public void visit(VarDeclaration varDeclaration, String className) {
+        // called in code generator
+    }
+
+    @Override
     public void visit(VarDeclaration varDeclaration, VarVisitType visitType) {
         String name = varDeclaration.getIdentifier().getName();
         if(Program.passNum == 1) {

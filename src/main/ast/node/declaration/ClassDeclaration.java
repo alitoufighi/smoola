@@ -100,9 +100,11 @@ public class ClassDeclaration extends Declaration{
     // if we have parent, our parent's object string is our parent's name.
     // elsewhere, we are Object class and our parent is "java/lang/Object"
     public String getParentObjectString() {
-        if(this.hasParent()){
+        if(this.hasParent())
             return parentName.getName();
-        } else
+        else if(!this.isObject())
+            return "Object";
+        else
             return "java/lang/Object";
     }
 }

@@ -13,6 +13,7 @@ public interface Visitor {
     void visit (ClassDeclaration classDeclaration);
     void visit (MethodDeclaration methodDeclaration);
     void visit (VarDeclaration varDeclaration, VarVisitType visitType);
+    void visit (VarDeclaration varDeclaration, String className);
 
     //Expressions
     void visit(ArrayCall arrayCall);

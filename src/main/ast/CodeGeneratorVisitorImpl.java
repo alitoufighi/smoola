@@ -37,7 +37,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
     private String getLabel() {
         return "LABEL" + labelCount++;
     }
-
+//TODO:age field didam bayad begam fielde (symboltable variable item)
     private String getMethodDescriptorCode(String className, String methodName){
         StringBuilder result = new StringBuilder();
         try{
@@ -95,19 +95,19 @@ public class CodeGeneratorVisitorImpl implements Visitor {
     }
 
     private void generateLimitsCode() {
-        addInstruction(".limit locals 20");
-        addInstruction(".limit stack 20");
+        addInstruction(".limit locals 50");
+        addInstruction(".limit stack 50");
     }
 
     private void generateConstructorCode(ClassDeclaration classDeclaration) {
         addInstruction(".method public <init>()V");
         incIndent();
-        addInstruction(".limit locals 20");
-        addInstruction(".limit stack 20");
+        addInstruction(".limit locals 50");
+        addInstruction(".limit stack 50");
         addInstruction("aload_0");
         addInstruction("invokespecial " + classDeclaration.getParentObjectString() + "/<init>()V");
         for(VarDeclaration varDeclaration : classDeclaration.getVarDeclarations())
-            varDeclaration.accept(this, VarVisitType.InClass);
+            varDeclaration.accept(this, classDeclaration.getName().getName());
         addInstruction("return");
         decIndent();
         addInstruction(".end method\n");
@@ -158,7 +158,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         incIndent();
         generateLimitsCode();
         for(VarDeclaration varDeclaration : methodDeclaration.getLocalVars())
-            varDeclaration.accept(this, VarVisitType.InClass); // clean this mess
+            varDeclaration.accept(this, VarVisitType.InMethod); // clean this mess
         for(Statement stm : methodDeclaration.getBody())
             stm.accept(this);
         generateReturnCode(methodDeclaration);
@@ -166,6 +166,18 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         addInstruction(".end method\n");
     }
 
+    @Override
+    public void visit(VarDeclaration varDeclaration, String className) {
+        String fieldSpec = className + "/" + varDeclaration.getIdentifier().getName();
+        String descriptor = varDeclaration.getTypeCodeString();
+        Type varType = varDeclaration.getType();
+        addInstruction("aload_0");
+        if(varType instanceof IntType || varType instanceof BooleanType)
+            addInstruction("iconst_0");
+        else if (varType instanceof StringType)
+            addInstruction("ldc \"\"");
+        addInstruction("putfield " + fieldSpec + " " + descriptor);
+    }
 
     @Override
     public void visit(VarDeclaration varDeclaration, VarVisitType visitType) {

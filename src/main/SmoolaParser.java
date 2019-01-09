@@ -1,27 +1,31 @@
 // Generated from /home/felagund/Desktop/Fall97/PLC/smoola/Smoola.g4 by ANTLR 4.7
 
-    import ast.node.declaration.*;
-    import ast.node.expression.*;
-    import ast.node.statement.*;
-    import ast.Type.ArrayType.*;
-    import ast.Type.PrimitiveType.*;
-    import ast.Type.UserDefinedType.*;
-    import ast.Type.*;
-    import ast.VisitorImpl;
-    import ast.node.expression.Value.*;
-    import ast.node.Program;
-    import symbolTable.SymbolTable;
-    import ast.node.PhaseNum;
-    import ast.node.expression.BinaryOperator.OperatorTypes;
-
-import org.antlr.v4.runtime.atn.*;
-import org.antlr.v4.runtime.dfa.DFA;
+    import ast.Type.ArrayType.ArrayType;
+import ast.Type.PrimitiveType.BooleanType;
+import ast.Type.PrimitiveType.IntType;
+import ast.Type.PrimitiveType.StringType;
+import ast.Type.Type;
+import ast.Type.UserDefinedType.UserDefinedType;
+import ast.node.Program;
+import ast.node.declaration.ClassDeclaration;
+import ast.node.declaration.MethodDeclaration;
+import ast.node.declaration.VarDeclaration;
+import ast.node.expression.*;
+import ast.node.expression.Value.BooleanValue;
+import ast.node.expression.Value.IntValue;
+import ast.node.expression.Value.StringValue;
+import ast.node.statement.*;
 import org.antlr.v4.runtime.*;
-import org.antlr.v4.runtime.misc.*;
-import org.antlr.v4.runtime.tree.*;
-import java.util.List;
-import java.util.Iterator;
+import org.antlr.v4.runtime.atn.ATN;
+import org.antlr.v4.runtime.atn.ATNDeserializer;
+import org.antlr.v4.runtime.atn.ParserATNSimulator;
+import org.antlr.v4.runtime.atn.PredictionContextCache;
+import org.antlr.v4.runtime.dfa.DFA;
+import org.antlr.v4.runtime.tree.ParseTreeListener;
+import org.antlr.v4.runtime.tree.TerminalNode;
+
 import java.util.ArrayList;
+import java.util.List;
 
 @SuppressWarnings({"all", "warnings", "unchecked", "unused", "cast"})
 public class SmoolaParser extends Parser {
@@ -370,7 +374,7 @@ public class SmoolaParser extends Parser {
 			            String parentname = (has_parent) ? ((ClassDeclarationContext)_localctx).pname.getText() : null;
 			            ((ClassDeclarationContext)_localctx).c =  new ClassDeclaration(
 			                new Identifier(classname, ((ClassDeclarationContext)_localctx).name.getLine()),
-			                (has_parent)? new Identifier(parentname, ((ClassDeclarationContext)_localctx).pname.getLine()) : new Identifier("Object", 0)
+			                (has_parent)? new Identifier(parentname, ((ClassDeclarationContext)_localctx).pname.getLine()) : null
 			            );
 			        
 			setState(114);

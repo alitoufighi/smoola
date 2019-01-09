@@ -70,17 +70,16 @@ public class Program {
     }
 
     public void createClassSymbolTableHierarchy() {
-//        HashMap<String, String> parentsList = new HashMap<>(); // to prevent circular inheritance!
         for (HashMap.Entry<String, SymbolTable> classTable : classesSymbolTable.entrySet()) {
             ClassDeclaration c;
             try {
-                c = classes.get(classTable.getKey());
-                String className = c.getName().getName();
+                String className = classTable.getKey();
+                if(isMainClass(className))
+                    c = mainClass;
+                else
+                    c = classes.get(className);
                 if (c.hasParent()) {
-                    if(c.getName().getName().equals("B")){
-                        System.out.println("B Visited ");
-                    }
-                    String parentName = classes.get(classTable.getKey()).getParentName().getName();
+                    String parentName = c.getParentName().getName();
                     if(checkCircularInheritance(c)){
                         Program.addError(
                                 "line:" + c.getLineNum() + ":circular inheritance found for classes " +
@@ -88,18 +87,17 @@ public class Program {
                                 PhaseNum.three
                         );
                     } else {
-//                        parentsList.put(className, parentName);
-//                        if (!parentName.equals(c.getName().getName()))
                         classTable.getValue().setPre(classesSymbolTable.get(parentName));
                     }
-                } else if (!c.getName().getName().equals("Object")) {
+                } else if (!c.isObject()) {
                     classTable.getValue().setPre(classesSymbolTable.get(
                             classes.get("Object").getName().getName()
                     ));
                 }
 
             } catch (Exception e) {
-                return;
+                System.out.println("--Exception for " + classTable.getKey());
+                System.out.println(e.toString());
             }
         }
     }
@@ -236,18 +234,14 @@ public class Program {
 
 
     private boolean checkCircularInheritance(ClassDeclaration c) {
-        String className = c.getName().getName();
         ArrayList<String> parentsList = new ArrayList<>();
-        if (!className.equals("Object")) {
-            String parentName = c.getParentName().getName();
-            while (!parentName.equals("Object")) {
-                parentsList.add(parentName);
-                ClassDeclaration parent = classes.get(parentName);
-                parentName = parent.getParentName().getName();
-                if (parentsList.contains(parentName))
-                    return true;
-            }
-
+        ClassDeclaration parent = c;
+        while (parent.hasParent()) {
+            String parentName = parent.getParentName().getName();
+            if (parentsList.contains(parentName))
+                return true;
+            parentsList.add(parentName);
+            parent = classes.get(parentName);
         }
         return false;
     }

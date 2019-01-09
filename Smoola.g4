@@ -65,7 +65,7 @@ grammar Smoola;
             String parentname = (has_parent) ? $pname.getText() : null;
             $c = new ClassDeclaration(
                 new Identifier(classname, $name.getLine()),
-                (has_parent)? new Identifier(parentname, $pname.getLine()) : new Identifier("Object", 0)
+                (has_parent)? new Identifier(parentname, $pname.getLine()) : null
             );
         }
         '{'

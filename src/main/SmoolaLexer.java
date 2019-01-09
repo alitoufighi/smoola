@@ -1,4 +1,4 @@
-// Generated from /home/felagund/Desktop/Fall97/PLC/smoola/Smoola.g4 by ANTLR 4.7
+// Generated from /home/alitou/projects/Java/smoola/Smoola.g4 by ANTLR 4.7
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.Token;

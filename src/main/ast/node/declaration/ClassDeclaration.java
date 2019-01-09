@@ -52,7 +52,7 @@ public class ClassDeclaration extends Declaration{
     }
 
     public boolean hasParent() {
-	    return parentName != null && !parentName.getName().equals("Object");
+	    return parentName != null;
 //        return !(name.getName().equals("Object"));
     }
 

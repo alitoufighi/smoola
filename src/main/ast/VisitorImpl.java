@@ -87,7 +87,7 @@ public class VisitorImpl implements Visitor {
         }
         else if (Program.passNum == 2){
             Program.currentClass = classDeclaration.getName().getName();
-            if(!classDeclaration.getName().getName().equals("Object"))
+            if(!classDeclaration.isObject())
                 Program.addMessage(classDeclaration.toString());
 
             if(classDeclaration.hasParent()){
@@ -833,10 +833,19 @@ public class VisitorImpl implements Visitor {
                     "Line:" + statement.getLineNum() + ":condition type must be boolean"
                     , PhaseNum.three);
         }
+        else if(condition instanceof UnaryExpression){
+            if(((UnaryExpression) condition).getUnaryOperator().equals(UnaryOperator.minus)){
+                Program.addError(
+                        "Line:" + statement.getLineNum() + ":condition type must be boolean"
+                        , PhaseNum.three
+                );
+            }
+        }
         else if(!(condition instanceof BooleanValue)) Program.addError(
                 "Line:" + statement.getLineNum() + ":condition type must be boolean"
                 , PhaseNum.three
         );
+
     }
 
     @Override

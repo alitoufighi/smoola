@@ -323,7 +323,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 			/// TODO getfield from the classes
 			try {
 				SymbolTableVariableItem item = (SymbolTableVariableItem)SymbolTable.top.get(identifier.getName() + "@var");
-				addInstruction("getfield " + item.getClassDeclaration().getName().getName() + " " + item.getName());
+				addInstruction("getfield " + item.getClassDeclaration().getName().getName() + "/" + item.getName() + " " + item.getType().getCodeString());
 
 			}
 			catch (ItemNotFoundException ex) {

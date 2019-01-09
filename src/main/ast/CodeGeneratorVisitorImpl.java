@@ -138,12 +138,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         addInstruction(".super "+classDeclaration.getParentObjectString());
 
         for (VarDeclaration varDeclaration : classDeclaration.getVarDeclarations()) {
-        	try {
-				SymbolTableVariableItem item = (SymbolTableVariableItem) classDeclaration.getSymbolTable().get(varDeclaration.getIdentifier().getName() + "@var");
-				addInstruction(".field " + item.getName() + " " + item.getType().getCodeString());
-			} catch (ItemNotFoundException exception) {
-        		System.out.println("Error checking is not good!");
-			}
+            addInstruction(".field " + SymbolTable.getFieldInitializationCode(varDeclaration.getIdentifier().getName()));
 		}
 
         generateConstructorCode(classDeclaration);

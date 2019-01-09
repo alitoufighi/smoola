@@ -52,4 +52,8 @@ public class SymbolTableVariableItem extends SymbolTableItem {
     }
 
     public static void resetIndex() { indexCounter = 1; }
+
+    public String getFieldInitializationCode() {
+        return name + " " + type.getCodeString();
+    }
 }

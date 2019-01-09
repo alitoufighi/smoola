@@ -47,6 +47,15 @@ public class SymbolTable {
 		}
 	}
 
+	public static String getFieldInitializationCode(String name){
+		try{
+			SymbolTableVariableItem item = (SymbolTableVariableItem)SymbolTable.top.get(name + "@var");
+			return item.getFieldInitializationCode();
+		} catch (ItemNotFoundException e){
+			return null;
+		}
+	}
+
 	// replaces variable item in top symbol table (should only do once :D) (place a boolean for shadowed, in var dec?
 	public void shadowVariable(String name, SymbolTableVariableItem item){
 		items.remove(name+"@var");

@@ -250,17 +250,13 @@ public class CodeGeneratorVisitorImpl implements Visitor {
                 if(left instanceof Identifier){
                     int index = SymbolTable.getIndex((Identifier) left);
                     if(SymbolTable.isClassField(left)) {
-//						addInstruction("aload_0");
 						addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier)left).getName()));
 					}
                     else
                         generateCodeAccordingToType(binaryExpression.getLeft().getType(),
                                 "istore " + index, "astore " + index);
-//                    generateCodeAccordingToType(
-//                            left.getType(), "istore " + index, "astore " + index);
                 } else if (left instanceof ArrayCall){
                     if(SymbolTable.isClassField(((ArrayCall) left).getInstance())) {
-//						addInstruction("aload 0");
 						addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier) ((ArrayCall) left).getInstance()).getName()));
                     }
 					else
@@ -342,7 +338,6 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 					identifier.getType(), "iload " + index, "aload " + index);
 		}
 		else {
-			/// TODO getfield from the classes
 			addInstruction("aload_0");
             addInstruction("getfield " + SymbolTable.getFieldDescriptorCode(identifier.getName()));
 		}
@@ -361,14 +356,10 @@ public class CodeGeneratorVisitorImpl implements Visitor {
 
     @Override
     public void visit(MethodCall methodCall) {
-        methodCall.getInstance().accept(this);
-
-        for(Expression arg : methodCall.getArgs())
-            arg.accept(this);
         String methodName = methodCall.getMethodName().getName();
         String instanceName = methodCall.getInstance().getType().toString();
-        addInstruction("invokevirtual " + instanceName + "/" +
-                methodName + getMethodDescriptorCode(instanceName, methodName));
+        String methodDescriptor = instanceName + "/" + methodName + getMethodDescriptorCode(instanceName, methodName);
+        methodCallCodeGenerator(methodCall.getInstance(), methodCall.getArgs(), methodDescriptor);
 
     }
 
@@ -444,21 +435,20 @@ public class CodeGeneratorVisitorImpl implements Visitor {
             }
 			else
                 addInstruction("iastore");
-            //putfield?
         }
         else {
             if(SymbolTable.isClassField(lvalue))
                 addInstruction("aload_0");
             assign.getrValue().accept(this);
+            if(assign.getrValue() instanceof ArrayCall)
+                addInstruction("iaload");
             leftIndex = SymbolTable.getIndex((Identifier)assign.getlValue());
             if(SymbolTable.isClassField(lvalue)) {
-//				addInstruction("aload_0");
 				addInstruction("putfield " + SymbolTable.getFieldDescriptorCode(((Identifier) lvalue).getName()));
 			}
 			else
                 generateCodeAccordingToType(assign.getlValue().getType(),
                     "istore " + leftIndex, "astore " + leftIndex);
-            //putfield?
         }
     }
 
@@ -483,18 +473,19 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         addInstruction(endLabel + ":");
     }
 
-//TODO: Meghdar dehie avalie!
+    private void methodCallCodeGenerator(Expression instance, ArrayList<Expression> args, String methodDescriptor){
+        instance.accept(this);
+        for(Expression arg : args)
+            arg.accept(this);
+        addInstruction("invokevirtual " + methodDescriptor);
+    }
 
     @Override
     public void visit(MethodCallInMain methodCallInMain) {
-        methodCallInMain.getInstance().accept(this);
-
-        for(Expression arg : methodCallInMain.getArgs())
-            arg.accept(this);
         String methodName = methodCallInMain.getMethodName().getName();
         String instanceName = methodCallInMain.getInstance().getType().toString();
-        addInstruction("invokevirtual " + instanceName + "/" +
-                methodName + getMethodDescriptorCode(instanceName, methodName));
+        String methodDescriptor = instanceName + "/" + methodName + getMethodDescriptorCode(instanceName, methodName);
+        methodCallCodeGenerator(methodCallInMain.getInstance(), methodCallInMain.getArgs(), methodDescriptor);
     }
 
     @Override

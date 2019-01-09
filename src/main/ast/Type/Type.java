@@ -23,7 +23,7 @@ public abstract class Type {
         } else if(this instanceof BooleanType){
             return "Z";
         } else if(this instanceof UserDefinedType){
-            return "L"+((UserDefinedType) this).getName().getName();
+            return "L" + ((UserDefinedType) this).getName().getName() + ";";
         } else
             return ""; //error
     }

@@ -415,7 +415,7 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         Expression lvalue = assign.getlValue();
         if(lvalue instanceof ArrayCall) {
             assign.getlValue().accept(this);
-            if(SymbolTable.isClassField(lvalue))
+            if(SymbolTable.isClassField(((ArrayCall) lvalue).getInstance()))
                 addInstruction("aload_0");
             assign.getrValue().accept(this);
             if(assign.getrValue() instanceof ArrayCall)
@@ -520,8 +520,11 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         //3 : iMaxField
         //4 : strBuilder
         //5 : iField
-
-        addInstruction("aload " + arrIndex);
+        if(SymbolTable.isClassField(arg)){
+            addInstruction("aload_0");
+            addInstruction("getfield " + SymbolTable.getFieldDescriptorCode(((Identifier)arg).getName()));
+        } else
+            addInstruction("aload " + arrIndex);
         addInstruction("arraylength");
         addInstruction("iconst_1");
         addInstruction("isub");
@@ -541,7 +544,11 @@ public class CodeGeneratorVisitorImpl implements Visitor {
         addInstruction("istore " + iField);
         addInstruction(firstOfLoop + ":");
         addInstruction("aload " + strBuilderField);
-        addInstruction("aload " + arrIndex);
+        if(SymbolTable.isClassField(arg)){
+            addInstruction("aload_0");
+            addInstruction("getfield " + SymbolTable.getFieldDescriptorCode(((Identifier)arg).getName()));
+        } else
+            addInstruction("aload " + arrIndex);
         addInstruction("iload " + iField);
         addInstruction("iaload ");
         addInstruction("invokevirtual " + "java/lang/StringBuilder/append(I)Ljava/lang/StringBuilder;");
